@@ -399,7 +399,7 @@ def MainAsXYZ2Mol2(argc,argv):
                         The above two lines ask the program to judge any two C, O atoms that are within 1.2 Angstrom(A) but at least 1.1 A
                         apart form a aromatic bond, any two C, O atoms that are at least 1.2 A apart but within 1.6 A from each other form
                         a single bond. Rules are checked in reverse order, which means that a rule appears later in the file overrides rules
-                        that appeared eariler, if it controdicts with the earlier rules.
+                        that appeared earlier, if it contradicts with the earlier rules.
                         Other specifications include:
                         1. In each rule, the order of names of two atoms doesn't matter, meaning "C O 1.2 1.6 1" and "O C 1.2 1.6 1" are
                            exactly the same.
@@ -407,7 +407,7 @@ def MainAsXYZ2Mol2(argc,argv):
                            "xyz2mol2.default.bond.rules", comes together with the xyz2mol2.py program and read by the program each time
                            it runs, to recognize some commonly encountered bonds in organic molecules. However a user defined [bond_rule_file]
                            can be supplied if some bonds are not recognized or special rules apply. Remember that rules in [bond_rule_file]
-                           will override the default rules, if there are controdictions.
+                           will override the default rules, if there are contradictions.
                         3. The 5th segment of each line in bond_rule_file defines the bond type, it can be any string that conforms with the
                            TRIPOS mol2 file format specification, such as 1, 2, 3, ar, am, etc. More information can be obtained from
                            www.tripos.com.
@@ -415,7 +415,7 @@ def MainAsXYZ2Mol2(argc,argv):
         exit()
 
     rules = BondRules()
-    default_route = "/home/nfs/luowj/bin/xyz2mol2.default.bond.rules"
+    default_route = "bond.rules"
     result = rules.ParseFile(default_route)
     if (not result):
         print("Cannot find the default bond rules file, hope you know what you are doing...")
@@ -522,5 +522,5 @@ def MainAsGaussianLog2XYZ(argc,argv):
         m.ShowAsXYZ()
 
 if __name__ == '__main__':
-    sys.argv = ["","clean.xyz","INCAR","0 1 0 1","0 1","TFInfo","LayerInfo"]
-    MainAsXYZ2Gaussian(len(sys.argv),sys.argv)
+    sys.argv = ["","testcase/2CH4.xyz"]
+    MainAsXYZ2Mol2(len(sys.argv),sys.argv)

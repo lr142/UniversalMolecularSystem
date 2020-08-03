@@ -1,3 +1,7 @@
+# lr142 Added:
+# Pycharm environment
+.idea
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
