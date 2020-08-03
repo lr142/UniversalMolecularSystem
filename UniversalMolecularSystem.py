@@ -524,3 +524,4 @@ def MainAsGaussianLog2XYZ(argc,argv):
 if __name__ == '__main__':
     sys.argv = ["","testcase/2CH4.xyz"]
     MainAsXYZ2Mol2(len(sys.argv),sys.argv)
+
