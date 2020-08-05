@@ -1,13 +1,15 @@
 #!/usr/bin/python
 import sys
 import math
+from Utility import *
+
 class Bond:
     def __init__(self):
         self.atom1 = None
         self.atom2 = None
         self.low = 0.0
         self.high = 0.0
-        self.order = None
+        self.type = None
         self.length = 0.0
     def Read(self,line):
         parts = line.split()
@@ -17,7 +19,7 @@ class Bond:
         self.atom2 = parts[1]
         self.low = float(parts[2])
         self.high = float(parts[3])
-        self.order = parts[4]
+        self.type = parts[4]
         return True
     def Satisfy(self,atom1,atom2,dist):
         if ( (atom1 == self.atom1 and atom2 == self.atom2) or 
@@ -27,37 +29,55 @@ class Bond:
         return False
 
     def Show(self):
-        print(str(self.atom1) + " " + str(self.atom2) + " " + str(self.low)+ " " +
-              str(self.high) + " " + str(self.order)+" actual length = "+str(self.length))
+        print(str(self.atom1) + " " + str(self.atom2) + " " + str(self.low) + " " +
+              str(self.high) + " " + str(self.type) + " actual length = " + str(self.length))
 
 class Atom:
+    element: str
+    x:float
+    y:float
+    z:float
+    type:str
+    charge:float
+    flexible:bool
+    serial:str
+    layerInfo: str
+
     def __init__(self):
-        self.name = None   # Its element
-        self.x = self.y = self.z = 0.0
-        self.internalName = None    # Its internal name as appears in mol2 files, like "H13" or "C2"
-        self.type = None   # for example its hybridization type, like "C.3" or "P.2"
+        self.element = None   # Its element, must be correctly capitalized like "C" or "Rh"; "C1", "c", "rh" are not acceptable.
+        self.x = self.y = self.z = 0.0  # Cartesian or fractional coordinates
+        self.name = None   # Its internal name as appears in mol2 files, like "H13" or "C2"
+        self.type = None   # Its force field type or its hybridization type, like "C.3" or "P.2"
         self.charge = 0
         self.flexible = True
-        self.layerInfo = ""
+        self.serial = None   # serial number in some cases, like in PDB.
+        self.layerInfo = None  # Used in QM/MM models, ie. high/mid/low layer in ONIOM methods
+        # Not all properties are available or relevant in all cases. File readers/writers and users can add additional
+        # properties to an Atom if necessary.
     def ShowAsXYZ(self):
-        print(str(self.name) + " " +
+        print(str(self.element) + " " +
               str(self.x) + " " +
               str(self.y) + " " +
-              str(self.z) )
+              str(self.z))
     def ShowAllFields(self):
-        print(str(self.name) + " " +
+        print(str(self.serial) + " " +
+              str(self.element) + " " +
               str(self.x) + " " +
               str(self.y) + " " +
               str(self.z) + " " +
-              str(self.internalName) + " " +
+              str(self.name) + " " +
               str(self.type) + " " +
-              str(self.flexible)
+              str(self.flexible) + " " +
+              str(self.charge)
               )
 
 class Molecule:
+    name: str
     def __init__(self):
         self.atoms = []
         self.bonds = []
+        self.name = None
+        self.bondedTo = None
     def FindBonds(self,rules):
         for i in range(0,len(self.atoms)):
             #sys.stderr.write("Atom No. {}\n".format(i))
@@ -73,7 +93,7 @@ class Molecule:
                     bond.atom1 = int(i)
                     bond.atom2 = int(j)
                     bond.length = length
-                    bond.order = order
+                    bond.type = order
                     self.bonds.append(bond)
 
     def ParseXYZFileLines(self,lines):
@@ -82,7 +102,7 @@ class Molecule:
             if (len(pars) < 4):
                 return False
             a = Atom()
-            a.name = pars[0]
+            a.element = pars[0]
             try:
                 a.x = float(pars[1])
                 a.y = float(pars[2])
@@ -98,51 +118,117 @@ class Molecule:
             self.atoms.append(a)
         return True
 
-    def ParseMol2FileLine(self,line):
-        if len(line.strip()) == 0:
-            return True
-        pars = line.split()
-        if len(pars) < 6:
-            return False
-        a = Atom()
-        a.name = pars[5].split(".")[0]
-        try:
-            a.x = float(pars[2])
-            a.y = float(pars[3])
-            a.z = float(pars[4])
-        except ValueError:
-            return False
-        a.internalName = pars[1]
-        a.type = pars[5]
-        self.atoms.append(a)
-        return True
-
-
     def ShowAsXYZ(self):
         print("  "+str(len(self.atoms)))
         print("xyz2mo2.py")
         for i in self.atoms:
             i.ShowAsXYZ()
 
-    def ShowAsMol2(self):
-        print("@<TRIPOS>MOLECULE")
-        print("mol")
-        print(str(len(self.atoms))+" "+str(len(self.bonds)))
-        print("SMALL")
-        print("NO_CHARGES")
-        print("")
-        print("")
-        print("@<TRIPOS>ATOM")
-        for i in range(0,len(self.atoms)):
-            print(str(i+1) + "  " + str(self.atoms[i].name) + " " +
-                  str(self.atoms[i].x) + " " + 
-                  str(self.atoms[i].y) + " " +
-                  str(self.atoms[i].z) + " " +
-                  str(self.atoms[i].name) )
-        print("@<TRIPOS>BOND")
-        for i in range(0,len(self.bonds)):
-            b = self.bonds[i]
-            print(str(i+1)+" "+str(b.atom1+1)+" "+str(b.atom2+1)+" "+str(b.order))
+    def Check(self, renameAtoms = True):
+        # If all checks are passed, return True, otherwise False
+        # This is a consistency check to make sure that:
+        # 1. Atom serial numbers start from 1 and are consecutive (Not mandatory), or at least unique (mandatory)
+        serialToIndexMap = {}
+        warnedAboutConsecutiveIssues = False
+        for i,atom in enumerate(self.atoms):
+            serial = atom.serial
+            if i == 0 and atom.serial != '1':   # Not start from 1
+                error("Atom serial in the molecule doesn't start from 1, but from {}".format(serial),False)
+            if not warnedAboutConsecutiveIssues:
+                try:    # Not consecutive or the serial are not even numbers. This warning shall be given only once
+                    if i > 0 and int(serial) != int(self.atoms[i-1].serial) + 1:
+                        error("Atom serials in the molecule are not consecutive from {} to {}".format(
+                            self.atoms[i-1].serial,serial),False)
+                        warnedAboutConsecutiveIssues = True
+                except ValueError:
+                    error("Atom serial is not a number: {} -> {}".format(self.atoms[i-1].serial,serial),False)
+                    warnedAboutConsecutiveIssues = True
+
+            if serial in serialToIndexMap:  # serial are not unique
+                error("Atom serials in the molecule are not unique, found that serial {} appears again".format(serial),False)
+                return False
+
+            serialToIndexMap[serial] = i
+
+        # 2. Atom names are unique (This may not be true in many cases), if renameAtoms is set to True, atoms will
+        #       be renamed to Element+Serial
+        alreadyUsedAtomNames = set([])
+        warnedAboutAtomNamingUniquenessIssue = False
+        for atom in self.atoms:
+            if (not warnedAboutAtomNamingUniquenessIssue) and (atom.name in alreadyUsedAtomNames):
+                error("Atom names in the molecule are not unique, found"
+                "that name {} appears again".format(atom.name),False)
+                error("Atoms {} be renamed. This message will not appear again.".format(
+                    "WILL" if renameAtoms else "WILL NOT"),False)
+                warnedAboutAtomNamingUniquenessIssue = True
+
+            alreadyUsedAtomNames.add(atom.name)
+
+        if warnedAboutAtomNamingUniquenessIssue and renameAtoms:
+            for atom in self.atoms:
+                atom.name = "{}{}".format(atom.name,atom.serial)
+
+        # 3. All bonds are correctly specified, i.e no bonds pointing to atoms that are not exist.
+        #       In this step, a auxiliary data structure 'bondedTo' is created, which is an array of maps
+        #       recording all other atoms (in their indexes) bonded to the current one
+        self.bondedTo = [set() for i in range(len(self.atoms))]
+        for b in self.bonds:
+            fromSerial = b.atom1
+            toSerial = b.atom2
+            if fromSerial in serialToIndexMap and toSerial in serialToIndexMap:
+                fromIndex = serialToIndexMap[fromSerial]
+                toIndex = serialToIndexMap[toSerial]
+                self.bondedTo[fromIndex].add(toIndex)
+                self.bondedTo[toIndex].add(fromIndex)
+            else:
+                error("Dangling bond found in molecule: {} - {} with type {}".format(b.atom1,b.atom2,b.type),False)
+                self.bondedTo = None  # Destroys the bondedMap and quit
+                return False
+
+        return True
+
+
+
+
+
+class MolecularFile:
+    # This is an abstract class that represents a molecular system description file and the methods to Read/Write
+    # the file. For each supported file type, such as .xyz, .mol2, .pdb, etc., a separate concrete class shall be
+    # created which implements the Read() and Write() virtual functions.
+    def __init__(self):  # Virtual function
+        pass
+    def Read(self,molecularSystem,filename):   # Virtual function
+        # Remember that any "Read" operation (even if not successful) will reset the molecular system
+        # In cases where there is a need to read a system from multiple files, read them into separate
+        # MolecularSystems and merge them.
+        pass
+    def Write(self,molecularSystem):   # Virtual function
+        pass
+
+class MolecularSystem:
+    # A molecular system is a collection of molecules and, in some cases, associated information including boundary
+    # conditions, force field descriptions, overall thermodynamic properties, etc.
+    # It can also represent the trajectory of a MD simulation if the system contains only 1 molecule, for example in
+    # analyzing the results of a QM run. If the system contains multiple molecules, a collection of MolecularSystems
+    # shall be needed to represent a trajectory.
+    def __init__(self):
+        self.molecules = []
+        self.boundary = None;    # boundary should be a 3x3 matrix for an orthogonal system
+    def Read(self,molecularFile,filename):
+        molecularFile.Read(self,filename)
+    def Write(self,molecularFile):
+        molecularFile.Write(self)
+    # Read and Write operations are delegated to concrete MolecularFile classes.
+    def Summary(self):
+        molCount = len(self.molecules)
+        atomCount = 0
+        bondCount = 0
+        for m in self.molecules:
+            atomCount += len(m.atoms)
+            bondCount += len(m.bonds)
+        output("Molecular System has {} molecules, {} atoms, and {} bonds".format(molCount,atomCount,bondCount))
+
+
 
 class XYZFile:  # Its main function "ParseFile()" acts like a factory for "Molecule"s
     def __init__(self):
@@ -202,74 +288,6 @@ class XYZFile:  # Its main function "ParseFile()" acts like a factory for "Molec
         file.close()
         return True
 
-class Mol2File:  # Its main function "ParseFile()" acts like a factory for "Molecule"s
-    def __init__(self):
-        self.name = None
-        self.molecules = []
-
-    def ParseFile(self, file_name):
-
-        from enum import Enum
-        class ReadingStatus(Enum):
-            Atom = 1
-            Bond = 2
-            Other = 3
-
-        file = None
-        try:
-            file = open(file_name, "r")
-        except IOError:
-            sys.stderr.write("Can't open mol2 file <" + str(file_name) + "> \n")
-            return False
-        content = file.readlines()
-        i = 0
-
-        mol = None
-        fileStatus = ReadingStatus.Other
-
-        while i < len(content):
-            line = content[i]
-            if line.startswith("@<TRIPOS>MOLECULE"):
-                if mol!= None:  # Found the 1st molecule ( == None) or found a new molecule ( != None)
-                    self.molecules.append(mol)
-                mol = Molecule()
-                fileStatus = ReadingStatus.Other
-
-            elif line.startswith("@<TRIPOS>ATOM"):
-                fileStatus = ReadingStatus.Atom
-
-            elif line.startswith("@<TRIPOS>BOND"):
-                fileStatus = ReadingStatus.Bond
-
-            elif line.startswith("@"):
-                fileStatus = ReadingStatus.Other
-            else:
-                pass
-
-            if fileStatus == ReadingStatus.Atom:
-                mol.ParseMol2FileLine(line)
-            elif fileStatus == ReadingStatus.Bond:
-                b = Bond()
-                pars = line.split()
-                if(len(pars) == 4):
-                    b.atom1 = int(pars[1])
-                    b.atom2 = int(pars[2])
-                    b.order = pars[3]
-                    mol.bonds.append(b)
-            else:
-                pass
-
-            i = i+1
-
-        self.molecules.append(mol) # Append the last molecule
-
-        if (len(self.molecules) == 0):
-            sys.stderr.write("Error occurred while reading the mol2 file <" + str(file_name) + ">, no"
-                             "molecular structure was read in.")
-            return False
-        file.close()
-        return True
-
 class GaussianLogFile:  # Its main function "ParseFile()" acts like a factory for "Molecule"s
     def __init__(self):
         self.name = None
@@ -277,14 +295,7 @@ class GaussianLogFile:  # Its main function "ParseFile()" acts like a factory fo
 
     def ParseFile(self,file_name):
 
-        PeriodicTable="H He "\
-        "Li Be B C N O F Ne "\
-        "Na Mg Al Si P S Cl Ar "\
-        "K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr "\
-        "Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe "\
-        "Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn "\
-        "Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Uub Uut Uuq Uup Uuh Uus Uuo"
-        elements = PeriodicTable.split()
+        periodicTable = Utility.PeriodicTable()
 
         file = None
         try:
@@ -325,7 +336,7 @@ class GaussianLogFile:  # Its main function "ParseFile()" acts like a factory fo
                 y = float(parts[4])
                 z = float(parts[5])
                 a = Atom()
-                a.name = elements[int(parts[1])-1]
+                a.element = periodicTable.AtomicNumberToElement(int(parts[1]))
                 a.x = x
                 a.y = y
                 a.z = z
@@ -375,16 +386,6 @@ class BondRules:
             if ( i.Satisfy(a1, a2, dist)):
                 return i.order
         return None
-
-def MainAsMol22XYZ(argc,argv):
-    if argc != 2:
-        sys.stderr.write("Usage : mol22xyz.py mol2file")
-        exit()
-
-    file = Mol2File()
-    file.ParseFile(argv[1])
-    for m in file.molecules:
-        m.ShowAsXYZ()
 
 def MainAsXYZ2Mol2(argc,argv):
     if argc < 2 or argc > 3:
@@ -521,7 +522,4 @@ def MainAsGaussianLog2XYZ(argc,argv):
     for m in file.molecules:
         m.ShowAsXYZ()
 
-if __name__ == '__main__':
-    sys.argv = ["","testcase/2CH4.xyz"]
-    MainAsXYZ2Mol2(len(sys.argv),sys.argv)
 
