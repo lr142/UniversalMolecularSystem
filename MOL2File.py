@@ -13,6 +13,7 @@ class MOL2File(MolecularFile):
             Bond = 2
             Other = 3
             CRYSIN = 4
+            Molecule = 5
 
         file = None
         try:
@@ -21,6 +22,7 @@ class MOL2File(MolecularFile):
             error("Can't open mol2 file <" + str(self.filename) + "> \n")
             return False
         content = file.readlines()
+        file.close()
         i = 0
 
         molecularSystem.molecules = []
@@ -36,7 +38,7 @@ class MOL2File(MolecularFile):
                     if mol != None:  # Found the 1st molecule ( == None) or found a new molecule ( != None)
                         molecularSystem.molecules.append(mol)
                     mol = Molecule()
-                    fileStatus = ReadingStatus.Other
+                    fileStatus = ReadingStatus.Molecule
 
                 elif line.startswith("@<TRIPOS>ATOM"):
                     fileStatus = ReadingStatus.Atom
@@ -57,7 +59,12 @@ class MOL2File(MolecularFile):
                 continue   # jump to the next line
 
             # if reaches here, the this line doesn't start with a "@"
-            if fileStatus == ReadingStatus.Atom:
+            if fileStatus == ReadingStatus.Molecule:
+                molName = line.strip().strip("\"")
+                mol.name = molName
+                fileStatus = ReadingStatus.Other
+
+            elif fileStatus == ReadingStatus.Atom:
                 a = self.ParseAtomLine(line)
                 if a != None:
                     mol.atoms.append(a)
@@ -160,9 +167,11 @@ def TestMOL2File(filename):
     s = MolecularSystem()
 
     s.Read(MOL2File(),filename)
-
     result = s.molecules[0].Check()
     output('Check {}'.format("passed" if result else "NOT PASSED!"))
 
-    s.Write(MOL2File())
+    # file = open("dump.mol2",'w')
+    # output.setoutput(file)
+    # s.Write(MOL2File())
+
     s.Summary()

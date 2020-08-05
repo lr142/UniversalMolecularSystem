@@ -1,0 +1,21 @@
+include "system.in.init"
+read_data "system.data"
+include "system.in.settings"
+include "system.in.charges"
+
+
+minimize 1.0e-5 1.0e-7 1000 10000
+write_data after.relax
+
+timestep 1
+variable interval equal 100
+variable T equal 2980
+variable totalSteps equal v_interval*200
+dump	 dump1 all custom ${interval} h2o.lammpstrj id mol type x y z ix iy iz
+
+velocity all create ${T} 123456 mom no
+fix	 fixNVT all nvt temp ${T} ${T} $(dt*100)
+thermo	 ${interval}
+thermo_style  custom  step temp pe ke etotal enthalpy press density lx
+run      ${totalSteps}
+write_restart restart.data

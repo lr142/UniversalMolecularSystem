@@ -64,6 +64,8 @@ class OutputHandler():
         self.OnOffState = True
 
     def setoutput(self, outputfile):
+        if self.outputfile != None:
+            self.outputfile.close()
         self.outputfile = outputfile
 
     def __call__(self,message,file_output_only = False):
@@ -83,5 +85,13 @@ class OutputHandler():
         self.OnOffState = False
 
 output = OutputHandler() # A unique and global object, similar as the ErrorHandler()
+
+
+def Distance(atom1, atom2):
+    return math.sqrt(
+        math.pow(atom1.x - atom2.x,2) +
+        math.pow(atom1.y - atom2.y,2) +
+        math.pow(atom1.z - atom2.z,2)
+    )
 
 
