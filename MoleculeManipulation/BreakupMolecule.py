@@ -8,8 +8,6 @@ from MOL2File import *
 def BreakupMoleculeByConnectivity(molecule):
     # returns a MolecularStructure
     # Make sure that it has the bonding map 'bondedTo' properly constructed.
-    if molecule.bondedTo == None:
-        molecule.Check()
 
     atomCount = len(molecule.atoms)
 
@@ -41,9 +39,12 @@ def BreakupMoleculeByConnectivity(molecule):
                 TreeMerge(toAtomIndex,index)
 
     # Debugging, Display the tree
-    for i in range(atomCount):
-        if parent[i] == i:  # This is a root node
-            output("Root : {}, with {} children: \n{}".format(i,len(children[i]),children[i]))
+    # for i in range(atomCount):
+    #     if parent[i] == i:  # This is a root node
+    #         output("Root : {}, with {} children: \n{}".format(i,len(children[i]),children[i]))
+    
+
+
 
 def TestBreakupMolecule():
     m = MolecularSystem()
@@ -52,7 +53,12 @@ def TestBreakupMolecule():
     random.shuffle(m.molecules[0].atoms)
     BreakupMoleculeByConnectivity(m.molecules[0])
     from XYZFile import XYZFile
-    m.Write(XYZFile())
+
+    # file = open('dump.xyz','w')
+    # output.setoutput(file)
+    # m.Write(XYZFile())
+    # output.setoutput(None)
+    # file.close()
 
 TestBreakupMolecule()
 

@@ -24,6 +24,7 @@ class Atom:
     flexible:bool
     serial:str
     layerInfo: str
+    systemwideSerial: str
 
     def __init__(self):
         self.element = None   # Its element, must be correctly capitalized like "C" or "Rh"; "C1", "c", "rh" are not acceptable.
@@ -32,8 +33,11 @@ class Atom:
         self.type = None   # Its force field type or its hybridization type, like "C.3" or "P.2"
         self.charge = 0.0
         self.flexible = None
-        self.serial = None   # serial number in some cases, like in PDB.
+        self.serial = None     # serial number in a molecular, usually a number starting from 1 but can be any string
+                               # serial number must be unique within a molecule
         self.layerInfo = None  # Used in QM/MM models, ie. high/mid/low layer in ONIOM methods
+        self.systemwideSerial = None  # unique serial number in the molecular system. Must be present if there are
+                               # intermolecular bonds (including hydrogen bonds) within the system.
         # Not all properties are available or relevant in all cases. File readers/writers and users can add additional
         # properties to an Atom if necessary.
     def ShowAsXYZ(self):
@@ -86,61 +90,20 @@ class Molecule:
                     bond.type = order
                     self.bonds.append(bond)
 
-    def ParseXYZFileLines(self,lines):
-        for i in range(2,len(lines)):
-            pars = lines[i].split()
-            if (len(pars) < 4):
-                return False
-            a = Atom()
-            a.element = pars[0]
-            try:
-                a.x = float(pars[1])
-                a.y = float(pars[2])
-                a.z = float(pars[3])
-
-                if len(pars) > 4:   # Additional keywords in .xyz file to specify selective dynamics
-                    if pars[4].upper()[0] == 'F':
-                        a.flexible = False
-
-            except ValueError:
-                return False
-
-            self.atoms.append(a)
-        return True
-
-    def ShowAsXYZ(self):
-        print("  "+str(len(self.atoms)))
-        print("xyz2mo2.py")
-        for i in self.atoms:
-            i.ShowAsXYZ()
-
-    def Check(self, renameAtoms = True):
+    def Check(self, renameAtoms = False):
         # If all checks are passed, return True, otherwise False
         # This is a consistency check to make sure that:
-        # 1. Atom serial numbers start from 1 and are consecutive (Not mandatory), or at least unique (mandatory)
+        # 1. Atom serial numbers must be unique
         serialToIndexMap = {}
-        warnedAboutConsecutiveIssues = False
         for i,atom in enumerate(self.atoms):
             serial = atom.serial
-            if i == 0 and atom.serial != '1':   # Not start from 1
-                error("Atom serial in the molecule doesn't start from 1, but from {}".format(serial),False)
-            if not warnedAboutConsecutiveIssues:
-                try:    # Not consecutive or the serial are not even numbers. This warning shall be given only once
-                    if i > 0 and int(serial) != int(self.atoms[i-1].serial) + 1:
-                        error("Atom serials in the molecule are not consecutive from {} to {}".format(
-                            self.atoms[i-1].serial,serial),False)
-                        warnedAboutConsecutiveIssues = True
-                except ValueError:
-                    error("Atom serial is not a number: {} -> {}".format(self.atoms[i-1].serial,serial),False)
-                    warnedAboutConsecutiveIssues = True
-
             if serial in serialToIndexMap:  # serial are not unique
                 error("Atom serials in the molecule are not unique, found that serial {} appears again".format(serial),False)
                 return False
 
             serialToIndexMap[serial] = i
 
-        # 2. Atom names are unique (This may not be true in many cases), if renameAtoms is set to True, atoms will
+        # 2. Atom names are unique (optional), if renameAtoms is set to True, atoms will
         #       be renamed to Element+Serial
         alreadyUsedAtomNames = set([])
         warnedAboutAtomNamingUniquenessIssue = False
@@ -197,13 +160,25 @@ class MolecularSystem:
     # It can also represent the trajectory of a MD simulation if the system contains only 1 molecule, for example in
     # analyzing the results of a QM run. If the system contains multiple molecules, a collection of MolecularSystems
     # shall be needed to represent a trajectory.
+    molecules: [Molecule]
+    boundary: []
+    interMolecularBonds: [Bond]
     def __init__(self):
         self.molecules = []
         self.boundary = None;    # boundary should be a 3x3 matrix for an orthogonal system
+        self.interMolecularBonds = None
     def Read(self,molecularFile,filename):
         molecularFile.Read(self,filename)
+        # perform a consistency check, and create necessary auxiliary data structures
+        for m in self.molecules:
+            if not m.Check():
+                return False
+
     def Write(self,molecularFile):
         molecularFile.Write(self)
+
+
+
     # Read and Write operations are delegated to concrete MolecularFile classes.
     def Summary(self):
         molCount = len(self.molecules)

@@ -63,7 +63,7 @@ file_names = [["Given1.mol2","Given1.csv","given1.lt"],
 for i in range(3):
     s = MolecularSystem()
     s.Read(MOL2File(),file_names[i][0])
-    s.molecules[0].Check()
+    s.molecules[0].Check(True) # Force renaming to remove duplicate atom names
 
     lt = MoltemplateLTFile()
     lt.AssignForcefieldType(s.molecules[0],file_names[i][1])
