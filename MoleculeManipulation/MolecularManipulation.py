@@ -5,7 +5,6 @@ from UniversalMolecularSystem import *
 from MOL2File import *
 from XYZFile import *
 
-
 def BreakupMolecule(originalMolecule, atomBelongToNewMoleculeSerialMap):
     # This function breaks up a molecule and return a MolecularSystem.
     # If successful, a NEWLY CREATED MolecularSystem, along with newly created constituent Molecules
