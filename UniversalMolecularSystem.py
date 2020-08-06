@@ -23,21 +23,27 @@ class Atom:
     charge:float
     flexible:bool
     serial:str
-    layerInfo: str
     systemwideSerial: str
+    layerInfo: str
+
+    # Note: If complex data structures just as lists or references to other objects are included in Atom in future
+    # versions, remember that there are cases copy.copy() is used to 'shallow' copy atoms. Make sure such operations are safe
+    # and reasonable. For example, if an atom contains a link to a third object, keep in mind that the external object
+    # will not be copied. This note applies also to 'Bond'.
+    # Since both Atom and Bond are considered to be 'elementary' classes, try not to include references or complex stuffs in them.
 
     def __init__(self):
         self.element = None   # Its element, must be correctly capitalized like "C" or "Rh"; "C1", "c", "rh" are not acceptable.
         self.x = self.y = self.z = 0.0  # Cartesian or fractional coordinates
-        self.name = None   # Its internal name as appears in mol2 files, like "H13" or "C2"
+        self.name = None   # Its internal name as appears in mol2 files, like "H13" or "C2". No need to be unique.
         self.type = None   # Its force field type or its hybridization type, like "C.3" or "P.2"
         self.charge = 0.0
         self.flexible = None
         self.serial = None     # serial number in a molecular, usually a number starting from 1 but can be any string
                                # serial number must be unique within a molecule
-        self.layerInfo = None  # Used in QM/MM models, ie. high/mid/low layer in ONIOM methods
         self.systemwideSerial = None  # unique serial number in the molecular system. Must be present if there are
                                # intermolecular bonds (including hydrogen bonds) within the system.
+        self.layerInfo = None  # Used in QM/MM models, ie. high/mid/low layer in ONIOM methods
         # Not all properties are available or relevant in all cases. File readers/writers and users can add additional
         # properties to an Atom if necessary.
     def ShowAsXYZ(self):
@@ -68,9 +74,8 @@ class Molecule:
     def __init__(self):
         self.atoms = []
         self.bonds = []
-        self.name = None  # Names are user-defined identifiers, e.g. it can be type+serial in a protein.
-        self.bondedTo = None
-        self.serial = None # Such as its serial in a peptide chain
+        self.name = None  # Names are user-defined identifiers, e.g. it can be type+serial in a protein. No need to be unique
+        self.serial = None # Such as its serial in a peptide chain, must be unique within a MolecularSystem
         self.type = None # Such as the 3-Letter code residue name GLY
     def FindBonds(self,rules):
         for i in range(0,len(self.atoms)):
@@ -90,7 +95,30 @@ class Molecule:
                     bond.type = order
                     self.bonds.append(bond)
 
-    def Check(self, renameAtoms = False):
+    def BondedMap(self):
+        # An auxiliary function, returns a list of sets (called bondedTo), for example
+        # bondedTo[0] records the indexes (not serials) of atoms that are connected to atom with index (not serial) 0
+        # Returns None if there are dangling bonds.
+        bondedMap = [set() for i in range(len(self.atoms))]
+
+        serialToIndexMap = {}
+        for i,atom in enumerate(self.atoms):
+            serialToIndexMap[atom.serial] = i
+
+        for b in self.bonds:
+            fromSerial = b.atom1
+            toSerial = b.atom2
+            if fromSerial in serialToIndexMap and toSerial in serialToIndexMap:
+                fromIndex = serialToIndexMap[fromSerial]
+                toIndex = serialToIndexMap[toSerial]
+                bondedMap[fromIndex].add(toIndex)
+                bondedMap[toIndex].add(fromIndex)
+            else:
+                return None
+
+        return bondedMap
+
+    def CheckConsistency(self):
         # If all checks are passed, return True, otherwise False
         # This is a consistency check to make sure that:
         # 1. Atom serial numbers must be unique
@@ -103,42 +131,21 @@ class Molecule:
 
             serialToIndexMap[serial] = i
 
-        # 2. Atom names are unique (optional), if renameAtoms is set to True, atoms will
-        #       be renamed to Element+Serial
-        alreadyUsedAtomNames = set([])
-        warnedAboutAtomNamingUniquenessIssue = False
-        for atom in self.atoms:
-            if (not warnedAboutAtomNamingUniquenessIssue) and (atom.name in alreadyUsedAtomNames):
-                error("Atom names in the molecule are not unique, found "
-                "that name {} appears again".format(atom.name),False)
-                error("Atoms {} be renamed. This message will not appear again.".format(
-                    "WILL" if renameAtoms else "WILL NOT"),False)
-                warnedAboutAtomNamingUniquenessIssue = True
-
-            alreadyUsedAtomNames.add(atom.name)
-
-        if warnedAboutAtomNamingUniquenessIssue and renameAtoms:
-            for atom in self.atoms:
-                atom.name = "{}{}".format(atom.name,atom.serial)
-
-        # 3. All bonds are correctly specified, i.e no bonds pointing to atoms that are not exist.
-        #       In this step, a auxiliary data structure 'bondedTo' is created, which is an array of maps
-        #       recording all other atoms (in their indexes, not serials) bonded to the current one
-        self.bondedTo = [set() for i in range(len(self.atoms))]
-        for b in self.bonds:
-            fromSerial = b.atom1
-            toSerial = b.atom2
-            if fromSerial in serialToIndexMap and toSerial in serialToIndexMap:
-                fromIndex = serialToIndexMap[fromSerial]
-                toIndex = serialToIndexMap[toSerial]
-                self.bondedTo[fromIndex].add(toIndex)
-                self.bondedTo[toIndex].add(fromIndex)
-            else:
-                error("Dangling bond found in molecule: {} - {} with type {}".format(b.atom1,b.atom2,b.type),False)
-                self.bondedTo = None  # Destroys the bondedMap and quit
-                return False
+        # 2. No dangling bonds, i.e no bonds pointing to atoms that are not exist.
+        #    Used the auxiliary function 'BondedMap'
+        result = self.BondedMap()
+        if result == None:
+            error("Dangling bond found in molecule: {} - {} with type {}".format(b.atom1,b.atom2,b.type),False)
+            self.bondedTo = None  # Destroys the bondedMap and quit
+            return False
 
         return True
+
+    def Summary(self):
+        output("Molecule Serial: {}, Name: {}, Type: {}, with {} atoms, and {} bonds".format(
+            self.serial,self.name,self.type,len(self.atoms),len(self.bonds)
+        ))
+
 
 class MolecularFile:
     # This is an abstract class that represents a molecular system description file and the methods to Read/Write
@@ -171,13 +178,11 @@ class MolecularSystem:
         molecularFile.Read(self,filename)
         # perform a consistency check, and create necessary auxiliary data structures
         for m in self.molecules:
-            if not m.Check():
+            if not m.CheckConsistency():
                 return False
 
     def Write(self,molecularFile):
         molecularFile.Write(self)
-
-
 
     # Read and Write operations are delegated to concrete MolecularFile classes.
     def Summary(self):
@@ -187,7 +192,9 @@ class MolecularSystem:
         for m in self.molecules:
             atomCount += len(m.atoms)
             bondCount += len(m.bonds)
-        output("Molecular System has {} molecules, {} atoms, and {} bonds".format(molCount,atomCount,bondCount))
+            m.Summary()
+        output("Molecular System has {} molecules, {} atoms, {} intra-molecular bonds, and {} inter-molecular bonds".format(
+            molCount,atomCount,bondCount,len(self.interMolecularBonds) if self.interMolecularBonds != None else 0))
 
 class GaussianLogFile:  # Its main function "ParseFile()" acts like a factory for "Molecule"s
     def __init__(self):

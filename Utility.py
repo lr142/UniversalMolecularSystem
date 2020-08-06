@@ -68,15 +68,15 @@ class OutputHandler():
             self.outputfile.close()
         self.outputfile = outputfile
 
-    def __call__(self,message,file_output_only = False):
+    def __call__(self,message):
 
         if self.OnOffState == False: # Output is turned off
             return
 
-        if not file_output_only:
-            print(message)
         if self.outputfile != None:
             print(message,file = self.outputfile)
+        else:
+            print(message)
 
     def turn_on(self):
         self.OnOffState = True

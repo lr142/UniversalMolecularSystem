@@ -17,7 +17,7 @@ class MoltemplateLTFile(MolecularFile):
         serialToAtomMap = {}
         for atom in molecule.atoms:
             serialToAtomMap[atom.serial] = atom   # saves links to corresponding atoms
-
+            atom.name = "{}{}".format(atom.element,atom.serial)  # need to rename the atoms into uniqueness in a force field file
         for l in lines:
             pars = l.strip().split(',')
             serial = pars[0]
@@ -63,7 +63,6 @@ file_names = [["Given1.mol2","Given1.csv","given1.lt"],
 for i in range(3):
     s = MolecularSystem()
     s.Read(MOL2File(),file_names[i][0])
-    s.molecules[0].Check(True) # Force renaming to remove duplicate atom names
 
     lt = MoltemplateLTFile()
     lt.AssignForcefieldType(s.molecules[0],file_names[i][1])

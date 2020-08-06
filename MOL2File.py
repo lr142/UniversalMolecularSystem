@@ -146,7 +146,7 @@ class MOL2File(MolecularFile):
                 )
             output("@<TRIPOS>BOND")
             for i,b in enumerate(mol.bonds,start=1):
-                print(str(i) + " " + str(b.atom1) + " " + str(b.atom2) + " " + str(b.type))
+                output(str(i) + " " + str(b.atom1) + " " + str(b.atom2) + " " + str(b.type))
 
         for m in molecularSystem.molecules:
             WriteAMolecule(m)
@@ -167,7 +167,7 @@ def TestMOL2File(filename):
     s = MolecularSystem()
 
     s.Read(MOL2File(),filename)
-    result = s.molecules[0].Check()
+    result = s.molecules[0].CheckConsistency()
     output('Check {}'.format("passed" if result else "NOT PASSED!"))
 
     # file = open("dump.mol2",'w')

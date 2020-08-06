@@ -111,7 +111,7 @@ def TestXYZFile(filename):
     s = MolecularSystem()
 
     s.Read(XYZFile(),filename)
-    result = s.molecules[0].Check()
+    result = s.molecules[0].CheckConsistency()
     output('Check {}'.format("passed" if result else "NOT PASSED!"))
 
     s.Write(XYZFile())
