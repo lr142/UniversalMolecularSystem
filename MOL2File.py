@@ -19,7 +19,7 @@ class MOL2File(MolecularFile):
         try:
             file = open(filename, "r")
         except IOError:
-            error("Can't open mol2 file <" + str(self.filename) + "> \n")
+            error("Can't open mol2 file <" + str(filename) + "> \n")
             return False
         content = file.readlines()
         file.close()

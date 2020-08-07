@@ -25,6 +25,7 @@ class Atom:
     serial:str
     systemwideSerial: str
     layerInfo: str
+    parent: str
 
     # Note: If complex data structures just as lists or references to other objects are included in Atom in future
     # versions, remember that there are cases copy.copy() is used to 'shallow' copy atoms. Make sure such operations are safe
@@ -44,8 +45,11 @@ class Atom:
         self.systemwideSerial = None  # unique serial number in the molecular system. Must be present if there are
                                # intermolecular bonds (including hydrogen bonds) within the system.
         self.layerInfo = None  # Used in QM/MM models, ie. high/mid/low layer in ONIOM methods
+        self.parent = None     # Used in some cases to record its parent, for example the molecule or residue it belongs to
+
         # Not all properties are available or relevant in all cases. File readers/writers and users can add additional
         # properties to an Atom if necessary.
+
     def ShowAsXYZ(self):
         print(str(self.element) + " " +
               str(self.x) + " " +
@@ -173,7 +177,7 @@ class MolecularSystem:
     def __init__(self):
         self.molecules = []
         self.boundary = None;    # boundary should be a 3x3 matrix for an orthogonal system
-        self.interMolecularBonds = None
+        self.interMolecularBonds = []
     def Read(self,molecularFile,filename):
         molecularFile.Read(self,filename)
         # perform a consistency check, and create necessary auxiliary data structures
@@ -194,7 +198,7 @@ class MolecularSystem:
             bondCount += len(m.bonds)
             m.Summary()
         output("Molecular System has {} molecules, {} atoms, {} intra-molecular bonds, and {} inter-molecular bonds".format(
-            molCount,atomCount,bondCount,len(self.interMolecularBonds) if self.interMolecularBonds != None else 0))
+            molCount,atomCount,bondCount,len(self.interMolecularBonds)))
 
 class GaussianLogFile:  # Its main function "ParseFile()" acts like a factory for "Molecule"s
     def __init__(self):

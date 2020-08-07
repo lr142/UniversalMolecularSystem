@@ -1,5 +1,6 @@
 from Utility import *
 from UniversalMolecularSystem import *
+from MolecularManipulation import *
 from MOL2File import *
 
 # A Materials Studio XSD files has a format similar to, if not simpler than, a HTML file.
@@ -54,46 +55,46 @@ def ReadMolecularStructureFromAXSDNodeTree(molecularSystem, rootNode):
     # Will use a stack 'nodeStack' to implement a depth-first search
     nodeStack = [rootNode]
     molCount = 0
+    # import note: Atoms and Molecule may not occur in a correct order. For example, a Molecule node may appear after
+    # all of its constituent atoms are listed. Besides, for protein structures, atoms may belong to a Chain rather than
+    # a Molecule. In the 1st pass, we first browse the nodeTree and collect all Atoms, Chains, Bonds, and Molecule. In the
+    # 2nd pass, we assign each Atom to a Molecule/Chain based on the 'Parent' property of each Atom and the 'ID' of
+    # of each Molecule or Chain object. In the third pass, we remove those Molecules that contain no Atoms (happens
+    # when the Molecule contains only several Chains but no Atom directly).
+
+    tempMoleculesCollection = []
+    tempAtomsCollection = []
+    tempBondCollection = []
+    # 1st pass
     while len(nodeStack) > 0:
         node = nodeStack.pop()
-        if node.name == 'Molecule':
-            molCount += 1
+        if node.name == 'Molecule' or node.name == 'Chain' or node.name == 'SubUnit':
             newMolecule = Molecule()
             newMolecule.name = node.properties['Name']
-            newMolecule.serial = '{}'.format(molCount)   # You wont' get a serial for molecules
-            # in an XSD file. So just number them sequentially.
-            molecularSystem.molecules.append(Molecule())
-        elif node.name == 'Chain':  # There is an alternative situation that atoms are not a molecule but in several
-            # 'Chains', and each 'Chain' is a child of the whole 'Molecule'. In this case, we treat each chain as a
-            # Molecule. This is usually true when reading a protein structure.
-            newMolecule = Molecule()
-            newMolecule.name = node.properties['Name']
-            # Now we perform a check. If the previously added 'Molecule' has zero atoms, then all atoms should go to a
-            # Chain, therefore there's no point to keep the Molecule as a level of hierarchy. We just use the Chain to
-            # replace the top level Molecule. Otherwise, there may be atoms that are in the system but don't belong to
-            # any chain, so we keep the top level Molecule as a separate collection of atoms.
-            if len(molecularSystem.molecules[-1].atoms) == 0:
-                newMolecule.serial = '{}'.format(molCount)
-                molecularSystem.molecules[-1] = newMolecule;
-            else:
-                molCount += 1
-                newMolecule.serial = '{}'.format(molCount)
-                molecularSystem.molecules.append(newMolecule)
+            newMolecule.serial = node.properties['ID']
+            tempMoleculesCollection.append(newMolecule)
         elif node.name == 'Atom3d':
             newAtom = Atom()
             newAtom.element = node.properties['Components']
             newAtom.serial = node.properties['ID']
             (newAtom.x,newAtom.y,newAtom.z) = (float(num) for num in node.properties['XYZ'].split(','))
 
+            if 'Parent' in node.properties:
+                newAtom.parent = node.properties['Parent']
+            else:  # If the Atom doesn't have a 'Parent' property, the lastly added molecule is its parent
+                newAtom.parent = tempMoleculesCollection[-1].serial
+
+
             # Name and Hybridization properties are not always present
             newAtom.name = node.properties['Name'] if 'Name' in node.properties else '{}{}'.format(newAtom.element,newAtom.serial)
             newAtom.type = "{}{}".format(newAtom.element,'.'+node.properties['Hybridization'] if 'Hybridization' in node.properties else '')
-            molecularSystem.molecules[-1].atoms.append(newAtom)
+            tempAtomsCollection.append(newAtom)
         elif node.name == 'Bond':
             newBond = Bond()
             (newBond.atom1,newBond.atom2) = node.properties['Connects'].split(',')
             newBond.type = node.properties['Type'] if 'Type' in node.properties else '1'    # Type is also not always present
-            molecularSystem.molecules[-1].bonds.append(newBond)
+            tempBondCollection.append(newBond)
+
         else:
             pass
 
@@ -101,7 +102,33 @@ def ReadMolecularStructureFromAXSDNodeTree(molecularSystem, rootNode):
             node.children.reverse()
             nodeStack.extend(node.children)  # Must add children reversely to stack in order to preserve the correct order
 
-    # Finally, we must renumber the atom serials, so that other programs can read the structure
+    # 2nd pass, assign atoms and bonds to each molecule
+    moleculeSerialToIndexMap = {}
+    for i,m in enumerate(tempMoleculesCollection):
+        moleculeSerialToIndexMap[m.serial] = i
+
+    serialToAtomMap = {}
+    for atom in tempAtomsCollection:
+        serialToAtomMap[atom.serial] = atom
+        molID = atom.parent;
+        molecule = tempMoleculesCollection[moleculeSerialToIndexMap[molID]]
+        molecule.atoms.append(atom)
+
+    for bond in tempBondCollection:
+        atom1 = serialToAtomMap[bond.atom1]
+        atom2 = serialToAtomMap[bond.atom2]
+        if atom1.parent == atom2.parent:      # intra-molecular bond
+            molID = atom1.parent
+            tempMoleculesCollection[moleculeSerialToIndexMap[molID]].bonds.append(bond)
+        else:   # inter-molecular bond
+            molecularSystem.interMolecularBonds.append(bond)
+
+    # 3rd pass, remove (forget) those empty molecules
+    for mol in tempMoleculesCollection:
+        if len(mol.atoms) > 0:
+            molecularSystem.molecules.append(mol)
+
+    # In addition, we must renumber the atom serials, so that other programs can read the structure
     oldToNewSerialMap = {}
     oldToNewSystemwideSerialMap = {}
     counterInSystem = 1
@@ -119,11 +146,12 @@ def ReadMolecularStructureFromAXSDNodeTree(molecularSystem, rootNode):
 
     for m in molecularSystem.molecules:
         for b in m.bonds:
-            try:
-                b.atom1 = oldToNewSerialMap[b.atom1]
-                b.atom2 = oldToNewSerialMap[b.atom2]
-            except:
-                error("In ReadMolecularStructureFromAXSDNodeTree(): Some local bond becomes global bond")
+            b.atom1 = oldToNewSerialMap[b.atom1]
+            b.atom2 = oldToNewSerialMap[b.atom2]
+
+    for (i,b) in enumerate(molecularSystem.interMolecularBonds):
+        b.atom1 = oldToNewSystemwideSerialMap[b.atom1]
+        b.atom2 = oldToNewSystemwideSerialMap[b.atom2]
 
     return True
 
@@ -212,7 +240,24 @@ class XSDFile(MolecularFile):
 
 def TestXSDFile():
     ms = MolecularSystem()
-    ms.Read(XSDFile(),'testcase/Coal100.xsd')
+    ms.Read(XSDFile(),'testcase/Coal100_10_100.xsd')
 
-    output.setoutput(open('dump.mol2','w'))
+    ms.Summary()
+    output.setoutput(open('testcase/dumpSeparate.mol2','w'))
     ms.Write(MOL2File())
+
+    output.setoutput(None)
+    mol = ReduceSystemToOneMolecule(ms)
+    ms = MolecularSystem()
+    ms.molecules.append(mol)
+    ms.Write(MOL2File())
+    ms.Summary()
+    output.setoutput(open('testcase/dumpCombined.mol2','w'))
+    ms.Write(MOL2File())
+
+    output.setoutput(None)
+    ms = BreakupMoleculeByConnectivity(ms.molecules[0])
+    ms.Summary()
+    output.setoutput(open('testcase/dumpAsChains.mol2', 'w'))
+    ms.Write(MOL2File())
+
