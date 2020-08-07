@@ -105,24 +105,26 @@ class MOL2File(MolecularFile):
     def ParseAtomLine(self,line):
         if len(line.strip()) == 0:
             return None
-        pars = line.split()
+        parts = line.split()
 
         a = Atom()
         try:
             # Format:
-            # atom_id atom_name x y z atom_type [subst_id
-            # [subst_name [charge [status_bit]]
-            # where "subst**" are information we don't care.
-            # Get the charge from pars[8] if it has such information
-            a.serial = pars[0]  # serial is read as a str
-            a.name = pars[1]
-            a.x = float(pars[2])
-            a.y = float(pars[3])
-            a.z = float(pars[4])
-            a.name = pars[1]
-            a.type = pars[5]
+            # atom_id atom_name x y z atom_type [subst_id [subst_name [charge [status_bit]]
+            # In Protein Structures, the subst_id and subst_name are usually residue serial and residue name, for example:
+            # 31 CD2           0.747000   38.794000   38.347000 C.3      4 LEU27      0.0072
+            # An additional section called @<TRIPOS>SUBSTRUCTURE is present in the MOL2 file telling that to which residue
+            # an atom is belonging. But in this version we ignore those residue information.
+            # Just get the charge from parts[8] if it has one.
+            a.serial = parts[0]  # serial is read as a str
+            a.name = parts[1]
+            a.x = float(parts[2])
+            a.y = float(parts[3])
+            a.z = float(parts[4])
+            a.name = parts[1]
+            a.type = parts[5]
             a.element = a.type.split(".")[0]
-            a.charge = float(pars[8]) if len(pars) > 8 else 0.0
+            a.charge = float(parts[8]) if len(parts) > 8 else 0.0
 
         except:
             error("Unexpected format in mol2 file <" + str(self.filename) + ">, "
@@ -169,9 +171,10 @@ def TestMOL2File(filename):
     s.Read(MOL2File(),filename)
     result = s.molecules[0].CheckConsistency()
     output('Check {}'.format("passed" if result else "NOT PASSED!"))
-
-    # file = open("dump.mol2",'w')
-    # output.setoutput(file)
-    # s.Write(MOL2File())
-
     s.Summary()
+
+    file = open("dump.mol2",'w')
+    output.setoutput(file)
+    s.Write(MOL2File())
+
+

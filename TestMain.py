@@ -7,7 +7,7 @@ from XSDFile import *
 #
 #MainAsGaussianLog2XYZ(2,["","testcase/in.log"])
 
-#TestMOL2File("testcase/Given1.mol2")
+#TestMOL2File("testcase/6zju.mol2")
 #TestXYZFile("testcase/2CH4.xyz")
 
 TestXSDFile()

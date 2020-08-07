@@ -86,12 +86,26 @@ class OutputHandler():
 
 output = OutputHandler() # A unique and global object, similar as the ErrorHandler()
 
-
+# Mathematical Functions
 def Distance(atom1, atom2):
     return math.sqrt(
         math.pow(atom1.x - atom2.x,2) +
         math.pow(atom1.y - atom2.y,2) +
         math.pow(atom1.z - atom2.z,2)
     )
+
+# String Manipulations
+# Note: Due to my lack of knowledge in this field, there may be better ways to implement the following functions,
+# for example through regular expressions. Please bear with the clumsiness of these functions. At least they work.
+
+def StringTok(string, token):
+    # Finds the first occurrence of the token in the string and split the string into a tuple (first,second) without
+    # the given token. For example StringTok("xyz = 543",'=') returns ("xyz" and "543"). (Both parts are with
+    # beginning and ending blank spaces striped away. If no such token is found, it returns None.
+    pos = string.find(token)
+    if pos == -1:
+        return None
+    else:
+        return (string[0:pos].strip(), string[pos + len(token):].strip())
 
 
