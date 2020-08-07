@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("..")
+sys.path.append("../..")
 
 from Utility import *
 from UniversalMolecularSystem import *
@@ -49,12 +49,6 @@ class MoltemplateLTFile(MolecularFile):
         output('  }')
         output('}')
 
-
-
-
-# if len(sys.argv) == 1:
-#     sys.argv = ["","Given1.csv"]
-
 file_names = [["Given1.mol2","Given1.csv","given1.lt"],
             ["Given2.mol2","Given2.csv","given2.lt"],
             ["FuchsSandoff.mol2","FuchsSandoff.csv","fuchssandoff.lt"]
@@ -67,11 +61,9 @@ for i in range(3):
     lt = MoltemplateLTFile()
     lt.AssignForcefieldType(s.molecules[0],file_names[i][1])
 
-    file = open("moltemplate/{}".format(file_names[i][2]),'w')
-    output.setoutput(file)
-    # s.Write(MOL2File())
-
-    s.Write(lt)
+    with open("{}".format(file_names[i][2]),'w') as file:
+        output.setoutput(file)
+        s.Write(lt)
 
 
 

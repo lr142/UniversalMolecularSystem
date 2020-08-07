@@ -1,0 +1,17 @@
+import "oplsaa.lt"
+import "given1.lt"
+import "given2.lt"
+import "fuchssandoff.lt"
+write_once("Data Boundary"){
+    0 100 xlo xhi
+    0 100 ylo yhi
+    0 100 zlo zhi
+}
+
+write_once("In Init"){
+    boundary p p p
+}
+
+mol1 =  new Given1.move(25,25,25)
+mol2 =  new Given2.move(25,25,50)
+mol3 =  new FuchsSandoff.move(25,25,75)

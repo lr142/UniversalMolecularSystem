@@ -48,7 +48,6 @@ def NodeFromLine(line):
     except:
         return None
 
-
 # This function reads out a molecular structure from a tree of XSDNodes. rootNode is given as the parameter.
 # Returns True if successful, otherwise False
 def ReadMolecularStructureFromAXSDNodeTree(molecularSystem, rootNode):
@@ -155,7 +154,6 @@ def ReadMolecularStructureFromAXSDNodeTree(molecularSystem, rootNode):
 
     return True
 
-
 class XSDFile(MolecularFile):
 
     def __init__(self):
@@ -236,7 +234,6 @@ class XSDFile(MolecularFile):
 
     def Write(self,molecularSystem):
         error("Sorry! Writing in the XSD format is not supported!")
-        
 
 def TestXSDFile():
     ms = MolecularSystem()
