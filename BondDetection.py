@@ -34,6 +34,103 @@ from MOL2File import *
 from MolecularManipulation import *
 from PDBFile import *
 
+class NeighborList:
+    minx:float
+    miny:float
+    minz:float
+    maxx:float
+    maxy:float
+    maxz:float
+    gridSize:float
+    Nx: int
+    Ny: int
+    Nz: int
+    neighborList: [set]
+    atomList: [Atom]
+    #grid: a 3-dimensional array of sets, recording which atoms are in each grid
+    def __init__(self, listOfAtoms, gridSize):
+
+        if len(listOfAtoms) == 0:
+            error("In NeighborList.__init__(), listOfAtoms must not be empty")
+        if gridSize < 0:
+            error("In NeighborList.__init__(), gridSize = {} must be positive".format(gridSize))
+
+        self.minx = self.miny = self.minz = 1E10
+        self.maxx = self.maxy = self.maxz = -1E10
+        self.gridSize = float(gridSize)
+        self.atomList = listOfAtoms
+        for a in listOfAtoms:
+            self.minx = min(a.x,self.minx)
+            self.miny = min(a.y,self.miny)
+            self.minz = min(a.z,self.minz)
+            self.maxx = max(a.x,self.maxx)
+            self.maxy = max(a.y,self.maxy)
+            self.maxz = max(a.z,self.maxz)
+        from math import floor
+        self.Nx = int(floor( (self.maxx - self.minx) / self.gridSize)) + 1
+        self.Ny = int(floor( (self.maxy - self.miny) / self.gridSize)) + 1
+        self.Nz = int(floor( (self.maxz - self.minz) / self.gridSize)) + 1
+        self.grid = [[[ set() for k in range(self.Nz)] for j in range(self.Ny) ] for i in range(self.Nx) ]
+
+        # 2nd pass, assign atoms to each grid:
+        for a in listOfAtoms:
+            ix,iy,iz = self._find_grid_(a.x,a.y,a.z)
+            self.grid[ix][iy][iz].add(a)
+
+        # 3rd pass, create the neighborList
+        N = len(listOfAtoms)
+        self.neighborList = [set() for i in range(N)]
+
+        def allAtomsInNeighborsOfAGridBlock(ix,iy,iz):
+            # Find all atoms in the 9 blocks (including itself) around grid[ix, iy, iz]
+            result = set()
+            for i in range(max(ix-1,0),min(ix+1,self.Nx)):
+                for j in range(max(iy-1,0),min(iy+1,self.Ny)):
+                    for k in range(max(iz-1,0),min(iz+1,self.Nz)):
+                        for a in self.grid[i][j][k]:
+                            result.add(a)
+            return result
+
+        for i,a in enumerate(listOfAtoms):
+            ix, iy, iz = self._find_grid_(a.x, a.y, a.z)
+            self.neighborList[i] = allAtomsInNeighborsOfAGridBlock(ix,iy,iz)
+            self.neighborList[i].remove(a)  # remove itself
+
+        #self._checking_()
+
+    def GetNeighborList(self,index):
+        # returns a copy of the neighborlist. Just a copy, don't modify it
+        return self.neighborList[index]
+
+    def _checking_(self):
+        from math import sqrt
+        for i,a in enumerate(self.atomList):
+            neighlist = self.GetNeighborList(i)
+            output("Neighbor List of atom {} contains {} atoms.".format(i,len(neighlist)))
+            for b in neighlist:
+                dist = Distance(a,b)
+                if dist > sqrt(3)*2*self.gridSize:
+                    error("Something is wrong in _check_, distance = {}".format(dist))
+
+
+
+    def _find_grid_(self,x,y,z):
+        # return a list [ix,iy,iz] indicating the grid index of x, y, z
+        # ix, iy, iz must be within [0, Nx], [0, Ny], [0, Nz]. Otherwise something is wrong.
+        from math import floor
+        ix = int(floor((x - self.minx) / self.gridSize))
+        iy = int(floor((y - self.miny) / self.gridSize))
+        iz = int(floor((z - self.minz) / self.gridSize))
+
+        # Debugging, double-checking:
+        # if ix < 0 or ix >= self.Nx or iy < 0 or iy >= self.Ny or iz < 0 or iz >= self.Nz:
+        #     error("Something is wrong within _find_grid_()")
+
+        return [ix,iy,iz]
+
+
+
+
 class Rule:
     ele1: str
     ele2: str
@@ -97,15 +194,23 @@ class BondRules(BondDetector):
                 systemwideSerialToMoleculeMap[a.systemwideSerial] = m
                 atomList.append(a)
 
+        # Performs a 2-body scan.
+        # For system contains more than 1E4 atoms, O(N^2) is not acceptable. A neighbor list is needed here.
+        neighList = NeighborList(atomList,4.5)
 
-        # Perform a 2-body distance check
         for i in range(len(atomList)):
-            for j in range(i+1,len(atomList)):
-                a1 = atomList[i]
-                a2 = atomList[j]
+            a1 = atomList[i]
+            neighbors = neighList.GetNeighborList(i)
+            for a2 in neighbors:
+                # To prevent the same bond from appearing twice, such as A-B and B-A, we require that the
+                # systemwideSerial of a2 being greater than a1.
+                # What are now comparing are two strings rather than integers. But it serves our purpose.
+                LOOK HERE!!!
+                # if a1.systemwideSerial >= a2.systemwideSerial:
+                #     continue
+                exit()
+
                 distance = Distance(a1,a2)
-                if distance > 5.0:   # The cutoff for all types of bonds
-                    continue
                 newBond = None
                 for r in self.rules:
                     if (a1.element != r.ele1 or a2.element != r.ele2) and (a1.element != r.ele2 or a2.element != r.ele1):
@@ -122,6 +227,8 @@ class BondRules(BondDetector):
                 # rule will be recorded. In other words, bond rules that appear later will override previous ones.
                 if newBond != None:
                     tempBondList.append(newBond)
+
+
 
         # Now we add the bonds to the system.
         # If old bonds are not removed, extra work is need to make sure that this are no duplicate bonds.
@@ -151,6 +258,8 @@ class BondRules(BondDetector):
                 existingBonds.add(key1)
                 existingBonds.add(key2)
 
+
+
         totalBonds = len(tempBondList)
         actuallyAddedBonds = 0
 
@@ -178,13 +287,13 @@ class BondRules(BondDetector):
 
         return True
 
-
-
 def DefaultBondRules():
     # This is a factory method that returns a BondRules object which reads the default bond rule file 'bondrules.csv'
     bondRules = BondRules()
     rules = BondRules()
-    default_route = "bondrules.csv"
+    import os
+    default_route = '{}/{}'.format(os.path.dirname(__file__),"bondrules.csv")
+    # the first part of the path is needed if case the script is called from other directories
     result = rules.ParseFile(default_route)
     return rules
 
@@ -199,8 +308,6 @@ def TestBondDetection():
     # ms2 = BreakupMoleculeRandomly(ms.molecules[0],10)
     # ms2.interMolecularBonds = []
     ms2 = ms
-
-
 
     # randomly delete some bonds:
     def RandDelBonds():
@@ -224,3 +331,6 @@ def TestBondDetection():
     ms3.RenumberAtomSerials()
     output.setoutput(open('testcase/dump.mol2','w'))
     ms3.Write(MOL2File())
+
+if __name__ == 'main':
+    TestBondDetection()

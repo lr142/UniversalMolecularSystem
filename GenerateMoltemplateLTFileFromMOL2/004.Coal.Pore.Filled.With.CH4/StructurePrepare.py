@@ -5,6 +5,8 @@ from Utility import *
 from XSDFile import *
 from PDBFile import *
 from XYZFile import *
+from BondDetection import DefaultBondRules
+import os
 
 
 # Making a tube that is _length Å long (periodic), with outer shell diameter _outer Å, inner shell diameter _inner Å
@@ -46,9 +48,9 @@ def CuttingTube(coalCell,_length,_outer,_inner):
 
 
 
-def Prepare():
+def PrepareCoal():
     images = []
-    for i in range(2):
+    for i in range(5):
         for j in range(2):
             for k in range(2):
                 images.append([i,j,k])
@@ -58,7 +60,9 @@ def Prepare():
     # Coordinates in this file are given in fractional coordinates, which is a little annoying
     primitiveCoalCell.FractionalToCartesianCoordinates()
 
-    primitiveCoalCell = ReduceSystemToOneMolecule(primitiveCoalCell)  # The as read structure has some inter-molecular bonds. Trying to elniminate them.
+    # The as read structure has some inter-molecular bonds. Trying to eliminate them.
+    primitiveCoalCell = ReduceSystemToOneMolecule(primitiveCoalCell)
+    # This will preserve the 'boundary' info stored in primitiveCoalCell
     tempMS = BreakupMoleculeByConnectivity(primitiveCoalCell.molecules[0])
     primitiveCoalCell.molecules = tempMS.molecules
 
@@ -68,15 +72,30 @@ def Prepare():
     largeCoalCell.Summary()
 
 
-    CuttingTube(largeCoalCell,200,100,50)
+    CuttingTube(largeCoalCell,500,100,50)
     largeCoalCell.Summary()
 
+    return largeCoalCell
+def FillCoalWithMethane(coalCell):
+    methaneCell = MolecularSystem()
+    methaneCell.Read(PDBFile(),"4158methane.pdb")
+    methaneCell.AutoDetectBonds(DefaultBondRules())
+    methaneCell.Summary()
+    output.setoutput(open('dump.mol2', 'w'))
+    methaneCell.Write(MOL2File())
+
+
+def Main():
+    largeCoalCell = None#PrepareCoal()
+    FillCoalWithMethane(largeCoalCell)
+    exit()
 
     output.setoutput(open('dump.mol2','w'))
     largeCoalCell.Write(MOL2File())
 
 
-Prepare()
+if __name__ == '__main__':
+    Main()
 
 
 
