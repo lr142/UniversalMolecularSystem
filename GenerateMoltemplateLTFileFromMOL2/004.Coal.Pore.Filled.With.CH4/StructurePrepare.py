@@ -78,7 +78,7 @@ def PrepareCoal():
     return largeCoalCell
 def FillCoalWithMethane(coalCell):
     methaneCell = MolecularSystem()
-    methaneCell.Read(PDBFile(),"4158methane.pdb")
+    methaneCell.Read(PDBFile(),"33428water.pdb")
     methaneCell.AutoDetectBonds(DefaultBondRules())
     methaneCell.Summary()
     output.setoutput(open('dump.mol2', 'w'))

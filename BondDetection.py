@@ -84,9 +84,9 @@ class NeighborList:
         def allAtomsInNeighborsOfAGridBlock(ix,iy,iz):
             # Find all atoms in the 9 blocks (including itself) around grid[ix, iy, iz]
             result = set()
-            for i in range(max(ix-1,0),min(ix+1,self.Nx)):
-                for j in range(max(iy-1,0),min(iy+1,self.Ny)):
-                    for k in range(max(iz-1,0),min(iz+1,self.Nz)):
+            for i in range(max(ix-1,0),min(ix+2,self.Nx)):
+                for j in range(max(iy-1,0),min(iy+2,self.Ny)):
+                    for k in range(max(iz-1,0),min(iz+2,self.Nz)):
                         for a in self.grid[i][j][k]:
                             result.add(a)
             return result
@@ -196,19 +196,24 @@ class BondRules(BondDetector):
 
         # Performs a 2-body scan.
         # For system contains more than 1E4 atoms, O(N^2) is not acceptable. A neighbor list is needed here.
-        neighList = NeighborList(atomList,4.5)
+        N = len(atomList)
+        if N > 10000:
+            output("Building NeighborList...")
+        neighList = NeighborList(atomList,2.0)
+        if N > 10000:
+            output("NeighborList Building Done.\n")
 
-        for i in range(len(atomList)):
+        for i in range(N):
+            if N > 10000 and i%10000 == 0:
+                output("Sanning for Bonds. Completed for {} out of {} atoms".format(i,N))
             a1 = atomList[i]
             neighbors = neighList.GetNeighborList(i)
             for a2 in neighbors:
                 # To prevent the same bond from appearing twice, such as A-B and B-A, we require that the
                 # systemwideSerial of a2 being greater than a1.
                 # What are now comparing are two strings rather than integers. But it serves our purpose.
-                LOOK HERE!!!
-                # if a1.systemwideSerial >= a2.systemwideSerial:
-                #     continue
-                exit()
+                if a1.systemwideSerial >= a2.systemwideSerial:
+                    continue
 
                 distance = Distance(a1,a2)
                 newBond = None
