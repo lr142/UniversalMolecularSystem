@@ -1,0 +1,37 @@
+# tip4p.lt
+import "oplsaa.lt"
+# The following infomation are from the original oplsaa force field definition
+# atom         65   31    OW    "TIP4P Water O"                8    15.999    3
+# atom         66   32    HW    "TIP4P Water H"                1     1.008    1
+# atom         67   33    M     "TIP4P Water M"                0     0.000    1
+
+# Parameters of TIP4P water are from: [Jorgensen, W. L., et al. (1983). "Comparison
+# of simple potential functions for simulating liquid water." J. Chem. Phys. 79(2): 926-935.]
+# O-H distance: 0.9572Å, O-M distance: 0.150
+# H-O-H angle: 104.52 degrees
+# q of H = +0.520, q of M = -1.040
+# Only OW has LJ parameters: epsilon = 0.1550 kcal/mol, sigma = 3.154 Å
+
+TIP4P inherits OPLSAA{
+    write("Data Atoms"){
+        # atomID     molID     atomType    charge     x      y       z
+        $atom:O      $mol:.    @atom:65     0.0      0.0    0.0     0.0
+        $atom:M      $mol:.    @atom:67     0.0      0.0    0.0     0.150
+        $atom:H1     $mol:.    @atom:66     0.0      0.0    -0.75695     0.5859
+        $atom:H2     $mol:.    @atom:66     0.0      0.0    +0.75695     0.5859     
+    }
+
+    write("Data Bond List"){
+        $bond:OH1     $atom:O    $atom:H1
+        $bond:OH2     $atom:O    $atom:H2
+        $bond:OM      $atom:O    $atom:M
+    }
+
+    write_once("In Settings"){
+        group WAT type @atom:65 @atom:66 @atom:67
+    }
+}
+
+        
+
+        

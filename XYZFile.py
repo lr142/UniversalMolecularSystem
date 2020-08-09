@@ -85,13 +85,17 @@ class XYZFile(MolecularFile):
             i = i+1
             continue
 
+        result = None
         # After the loop, make sure that there are not missing atoms
         if status != ReadingStatus.Other:
             error("Unexpected file format in xyz file <{}> at the end."
             " {} atoms are claimed but only {} are provided.".format(filename,atomCount,atomIndex))
-            return False
+            result = False
         else:
-            return True
+            result = True
+
+        molecularSystem.RenumberAtomSerials()
+        return result
 
     def Write(self,molecularSystem):
         # Writing out an XYZ file is straightforward

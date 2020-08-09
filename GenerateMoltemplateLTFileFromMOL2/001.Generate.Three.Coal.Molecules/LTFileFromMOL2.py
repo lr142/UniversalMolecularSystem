@@ -65,5 +65,3 @@ for i in range(3):
         output.setoutput(file)
         s.Write(lt)
 
-
-

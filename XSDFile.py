@@ -128,29 +128,8 @@ def ReadMolecularStructureFromAXSDNodeTree(molecularSystem, rootNode):
             molecularSystem.molecules.append(mol)
 
     # In addition, we must renumber the atom serials, so that other programs can read the structure
-    oldToNewSerialMap = {}
-    oldToNewSystemwideSerialMap = {}
-    counterInSystem = 1
-    for m in molecularSystem.molecules:
-        counterInMolecule = 1
-        for a in m.atoms:
-            newSerial = '{}'.format(counterInMolecule)
-            newSystemwideSerial = '{}'.format(counterInSystem)
-            oldToNewSerialMap[a.serial] = newSerial
-            oldToNewSystemwideSerialMap[a.serial] = newSystemwideSerial
-            a.serial = newSerial
-            a.systemwideSerial = newSystemwideSerial
-            counterInMolecule += 1
-            counterInSystem += 1
+    molecularSystem.RenumberAtomSerials()
 
-    for m in molecularSystem.molecules:
-        for b in m.bonds:
-            b.atom1 = oldToNewSerialMap[b.atom1]
-            b.atom2 = oldToNewSerialMap[b.atom2]
-
-    for (i,b) in enumerate(molecularSystem.interMolecularBonds):
-        b.atom1 = oldToNewSystemwideSerialMap[b.atom1]
-        b.atom2 = oldToNewSystemwideSerialMap[b.atom2]
 
     return True
 

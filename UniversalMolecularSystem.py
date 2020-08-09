@@ -164,6 +164,12 @@ class MolecularFile:
         pass
     def Write(self,molecularSystem):   # Virtual function
         pass
+class BondDetector:
+    # This is an abstract class that has a sole function called Detect, which recognize and generates bonds within
+    # a molecular system. In 'BondDetection.py' we implemented a clumsy detector based solely on atom distances and element
+    # types. In the future we can write fancier detectors like one based on machine learning.
+    def Detect(self,molecularSystem,flushCurrentBonds):
+        pass
 
 class MolecularSystem:
     # A molecular system is a collection of molecules and, in some cases, associated information including boundary
@@ -188,6 +194,36 @@ class MolecularSystem:
     def Write(self,molecularFile):
         molecularFile.Write(self)
 
+    def RenumberAtomSerials(self):
+        # renumber atom serials and systemwideSerials. This is required in most cases where the atoms must have a
+        # consecutive order so that other programs can read it.
+        oldToNewSerialMap = {}
+        oldToNewSystemwideSerialMap = {}
+        counterInSystem = 1
+        for m in self.molecules:
+            counterInMolecule = 1
+            for a in m.atoms:
+                newSerial = '{}'.format(counterInMolecule)
+                newSystemwideSerial = '{}'.format(counterInSystem)
+                oldToNewSerialMap[a.serial] = newSerial
+                oldToNewSystemwideSerialMap[a.serial] = newSystemwideSerial
+                a.serial = newSerial
+                a.systemwideSerial = newSystemwideSerial
+                counterInMolecule += 1
+                counterInSystem += 1
+
+        for m in self.molecules:
+            for b in m.bonds:
+                b.atom1 = oldToNewSerialMap[b.atom1]
+                b.atom2 = oldToNewSerialMap[b.atom2]
+
+        for (i, b) in enumerate(self.interMolecularBonds):
+            b.atom1 = oldToNewSystemwideSerialMap[b.atom1]
+            b.atom2 = oldToNewSystemwideSerialMap[b.atom2]
+
+    def AutoDetectBonds(self, autoBondDetector, flushCurrentBonds = False):
+        autoBondDetector.Detect(self, flushCurrentBonds)
+
     # Read and Write operations are delegated to concrete MolecularFile classes.
     def Summary(self):
         molCount = len(self.molecules)
@@ -200,6 +236,8 @@ class MolecularSystem:
         output("Molecular System has {} molecules, {} atoms, {} intra-molecular bonds, and {} inter-molecular bonds".format(
             molCount,atomCount,bondCount,len(self.interMolecularBonds)))
 
+
+# Legacy Codes to be rewritten
 class GaussianLogFile:  # Its main function "ParseFile()" acts like a factory for "Molecule"s
     def __init__(self):
         self.name = None

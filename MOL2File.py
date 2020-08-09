@@ -1,5 +1,7 @@
 from UniversalMolecularSystem import *
 from Utility import *
+from XYZFile import *
+
 
 class MOL2File(MolecularFile):
     def __init__(self):
@@ -144,7 +146,9 @@ class MOL2File(MolecularFile):
             output("@<TRIPOS>ATOM")
             for a in mol.atoms:
                 output("{} {} {} {} {} {} {} {} {}".format(
-                    a.serial,a.name,a.x,a.y,a.z,a.type,0.0,"****",a.charge)
+                    a.serial,a.name,a.x,a.y,a.z,
+                    a.type if a.type!=None else a.element,
+                    0.0,"****",a.charge)
                 )
             output("@<TRIPOS>BOND")
             for i,b in enumerate(mol.bonds,start=1):
@@ -173,8 +177,8 @@ def TestMOL2File(filename):
     output('Check {}'.format("passed" if result else "NOT PASSED!"))
     s.Summary()
 
-    file = open("dump.mol2",'w')
+    file = open("testcase/Given1.xyz",'w')
     output.setoutput(file)
-    s.Write(MOL2File())
+    s.Write(XYZFile())
 
 
