@@ -59,12 +59,11 @@ def BreakupMolecule(originalMolecule, atomBelongToNewMoleculeSerialMap):
         molIndex = newMoleculeSerialToIndexMap[molSerial]
         return newMS.molecules[molIndex]
 
-    import copy
     # copy atoms into the new system
     serialGlobalToLocalMap = {}
     for atom in originalMolecule.atoms:
         newMol = FindMoleculeFromAtomSerial(atom.serial)
-        newAtom = copy.copy(atom)               # A 'shallow copy' shall do
+        newAtom = atom.Copy()
         newAtom.systemwideSerial = newAtom.serial   # Sets the systemwide serial.
         # Also need to renumber atoms within each molecule
         newAtom.serial = "{}".format(len(newMol.atoms)+1)
@@ -78,12 +77,12 @@ def BreakupMolecule(originalMolecule, atomBelongToNewMoleculeSerialMap):
         mol2 = FindMoleculeFromAtomSerial(bond.atom2)
         if mol1 == mol2:    # comparing two references, shall be fine  # intra-molecular
             # In this case, must switch to the local (within a molecule) serial
-            newBond = copy.copy(bond)
+            newBond = bond.Copy()
             newBond.atom1 = serialGlobalToLocalMap[bond.atom1]
             newBond.atom2 = serialGlobalToLocalMap[bond.atom2]
             mol1.bonds.append(newBond)
         else:  # intermolecular
-            newMS.interMolecularBonds.append(copy.copy(bond))
+            newMS.interMolecularBonds.append(bond.Copy())
 
     # for m in newMS.molecules:
     #     error.turn_on()
@@ -164,7 +163,7 @@ def BreakupMoleculeRandomly(molecule,numberOfMolecules):
 
 def ReduceSystemToOneMolecule(originalSystem):
     # This function combines all molecules in a system into a single molecule.
-    # If successful, the NEWLY CREATED molecule shall be returned. Otherwise it returns None
+    # If successful, a NEWLY CREATED one-molecule system shall be returned. Otherwise it returns None
     # Requirement:
     # 1. If there are intermolecular bonds, each atom must have a unique system-wide serial number
     # Features:
@@ -193,19 +192,19 @@ def ReduceSystemToOneMolecule(originalSystem):
     newMolecule = Molecule()
     newMolecule.name = originalSystem.molecules[0].name
     newMolecule.type = originalSystem.molecules[0].type
-    import copy
+
     for m in originalSystem.molecules:
 
         localSerialToGlobalSerialMap = {}
         for a in m.atoms:
-            newAtom = copy.copy(a)
+            newAtom = a.Copy()
             if not systemwideSerialsOK: # If there is originally no systemwide serial, assign one to it
                 newAtom.systemwideSerial = "{}".format(len(newMolecule.atoms)+1)
             localSerialToGlobalSerialMap[newAtom.serial] = newAtom.systemwideSerial
             newAtom.serial = newAtom.systemwideSerial
             newMolecule.atoms.append(newAtom)
         for b in m.bonds:
-            newBond = copy.copy(b)
+            newBond = b.Copy()
             try:
                 newBond.atom1 = localSerialToGlobalSerialMap[newBond.atom1]
                 newBond.atom2 = localSerialToGlobalSerialMap[newBond.atom2]
@@ -215,33 +214,86 @@ def ReduceSystemToOneMolecule(originalSystem):
 
     if originalSystem.interMolecularBonds != None:
         for b in originalSystem.interMolecularBonds:
-            newBond = copy.copy(b)
+            newBond = b.Copy()
             newMolecule.bonds.append(newBond)
 
-    return newMolecule
+    import copy
+    newMS = copy.copy(originalSystem)   # 'Shallow' copy
+    newMS.molecules = [newMolecule]     # The sole molecule
+    newMS.interMolecularBonds = []      # No intermolecular bonds
+    newMS.boundary = copy.deepcopy(originalSystem.boundary)  # Don't forget the periodicity
+
+    return newMS
+
+def ExtendSystem(destSystem, srcSystem):
+    # Copy all atoms, molecules, and bonds in srcSystem into destSystem to extend destSystem
+    # This function will modify the 'destSystem' but leave 'srcSystem' unchanged
+    # by making a copy of the srcSystem:
+    copyOfSrcSystem = srcSystem.Copy()
+    atomsCountInDestSystem = 0
+    for m in destSystem.molecules:
+        atomsCountInDestSystem += len(m.atoms)
+    # Need to renumber atoms in the srcSystem so that atom serials don't clash
+    copyOfSrcSystem.RenumberAtomSerials(atomsCountInDestSystem + 1)
+    destSystem.molecules.extend(copyOfSrcSystem.molecules)
+    destSystem.interMolecularBonds.extend(copyOfSrcSystem.interMolecularBonds)
+    # Assume that there is no bonds across systems. If there is, the caller shall need to add them manually or call
+    # AutoDetectBonds on the extended system.
+    return True
+
+def DuplicateSystemPeriodically(moleculerSystem,images):
+    # images is a list of 3-membered vectors, for example [[0,0,1],[1,0,-1],...]
+    # [0,0,1] means that the caller wants to get a periodic image along the z-direction just above the original image
+    # [1,0,-1] means the image is in the greater x-direction and lower z-direction. Other coordinates have similar meanings.
+    # [0,0,0] means the original image, whether the original images appears in the list of images has no effect.
+    # Requirement: the molecularSystem must have the 'boundary' property properly set.
+    # Currently it ONLY supports ORTHOGONAL systems!
+    copyOfOriginalSystem = moleculerSystem.Copy()  # This copy saves the original state of the unduplicated system.
+    A,B,C = [None,None,None]
+    try:
+        A = float(moleculerSystem.boundary[0][0])
+        B = float(moleculerSystem.boundary[1][1])
+        C = float(moleculerSystem.boundary[2][2])
+    except:
+        error("In DuplicateSystemPeriodically(), the system is requirement to have a periodic unit cell size.",False)
+        return False
+
+    for img in images:
+
+        output(img)
+
+        for i in range(3):
+            if type(img[i]) != int:
+                error("In DuplicateSystemPeriodically(), the image indicators must be integers.", False)
+                return False
+        if img[0] == 0 and img[1] == 0 and img[2] == 0:
+            continue
+
+        dx = A* int(img[0])
+        dy = B* int(img[1])
+        dz = C* int(img[2])
+
+        newMS = copyOfOriginalSystem.Copy()
+        newMS.Translate(dx,dy,dz)
+        ExtendSystem(moleculerSystem, newMS)
+
+
+
+    del copyOfOriginalSystem
+    return True
+
+
 
 def TestBreakupMolecule():
     ms = MolecularSystem()
-    ms.Read(MOL2File(),'Coal70A.mol2')
-    ms.molecules[0].Summary()
 
-    ms_split = None;
-    for i in range(2):
-        output("Round {}".format(i))
-        import random
-        random.shuffle(ms.molecules[0].atoms)
-        ms_split = BreakupMoleculeRandomly(ms.molecules[0],random.randint(1,200))
-        #ms_split = BreakupMoleculeByConnectivity(ms.molecules[0])
-        ms_split.Summary()
-        newMol = ReduceSystemToOneMolecule(ms_split)
+    ms.Read(MOL2File(),'testcase/Coal70A.mol2')
+    ms.Summary()
 
-        newMol.Summary()
-        ms = MolecularSystem()
-        ms.molecules = [newMol]
-
-    output.setoutput(open('MoleculeManipulationTestingCases/dump.mol2', 'w'))
-    ms_split = BreakupMoleculeByConnectivity(ms.molecules[0])
-    ms_split.Write(MOL2File())
-
+    images = [[0,0,0],[1,0,0],[0,1,0]]
+    DuplicateSystemPeriodically(ms,images)
+    ms.Summary()
+    output.setoutput(open('testcase/dump.mol2','w'))
+    ms.Write(MOL2File())
 
 

@@ -14,6 +14,10 @@ class Bond:
         self.type = None
         self.length = 0.0
 
+    def Copy(self):
+        import copy
+        return copy.copy(self)
+
 class Atom:
     element: str
     x:float
@@ -28,7 +32,8 @@ class Atom:
     parent: str
 
     # Note: If complex data structures just as lists or references to other objects are included in Atom in future
-    # versions, remember that there are cases copy.copy() is used to 'shallow' copy atoms. Make sure such operations are safe
+    # versions, remember that Atom.Copy() is used to duplicate an atom, which uses copy.copy() internally to
+    # 'shallow' copy atoms. Make sure such operations are safe
     # and reasonable. For example, if an atom contains a link to a third object, keep in mind that the external object
     # will not be copied. This note applies also to 'Bond'.
     # Since both Atom and Bond are considered to be 'elementary' classes, try not to include references or complex stuffs in them.
@@ -49,6 +54,16 @@ class Atom:
 
         # Not all properties are available or relevant in all cases. File readers/writers and users can add additional
         # properties to an Atom if necessary.
+
+    def Copy(self):
+        # Returns a copy of the current Atom. It uses 'shallow' copy. See the notes at the beginning of this class
+        import copy
+        return copy.copy(self)
+
+    def Translate(self,dx,dy,dz):  # Self-evident
+        self.x += dx
+        self.y += dy
+        self.z += dz
 
     def ShowAsXYZ(self):
         print(str(self.element) + " " +
@@ -145,6 +160,18 @@ class Molecule:
 
         return True
 
+    def Copy(self):
+        import copy
+        newMol = copy.copy(self)   # A 'Shallow' copy that copies only references to its string and integer properties
+        newMol.atoms = []
+        newMol.bonds = []
+        for a in self.atoms:
+            newMol.atoms.append(a.Copy())
+        for b in self.bonds:
+            newMol.bonds.append(b.Copy())
+        return newMol
+
+
     def Summary(self):
         output("Molecule Serial: {}, Name: {}, Type: {}, with {} atoms, and {} bonds".format(
             self.serial,self.name,self.type,len(self.atoms),len(self.bonds)
@@ -194,35 +221,66 @@ class MolecularSystem:
     def Write(self,molecularFile):
         molecularFile.Write(self)
 
-    def RenumberAtomSerials(self):
+    def Copy(self):
+        import copy
+        newMS = copy.copy(self)
+        newMS.molecules = []
+        newMS.interMolecularBonds = []
+        for m in self.molecules:
+            newMS.molecules.append(m.Copy())
+        for b in self.interMolecularBonds:
+            newMS.interMolecularBonds.append(b.Copy())
+        newMS.boundary = copy.deepcopy(self.boundary)
+        return newMS
+
+    def RenumberAtomSerials(self, startingSystemwideSerial = 1):
         # renumber atom serials and systemwideSerials. This is required in most cases where the atoms must have a
         # consecutive order so that other programs can read it.
-        oldToNewSerialMap = {}
+        oldToNewSerialMap = [ {} for i in range(len(self.molecules)) ]
         oldToNewSystemwideSerialMap = {}
-        counterInSystem = 1
-        for m in self.molecules:
+
+        counterInSystem = startingSystemwideSerial
+        for i,m in enumerate(self.molecules):
             counterInMolecule = 1
             for a in m.atoms:
                 newSerial = '{}'.format(counterInMolecule)
                 newSystemwideSerial = '{}'.format(counterInSystem)
-                oldToNewSerialMap[a.serial] = newSerial
-                oldToNewSystemwideSerialMap[a.serial] = newSystemwideSerial
+                oldToNewSerialMap[i][a.serial] = newSerial
+                if a.systemwideSerial != None:
+                    oldToNewSystemwideSerialMap[a.systemwideSerial] = newSystemwideSerial
                 a.serial = newSerial
                 a.systemwideSerial = newSystemwideSerial
                 counterInMolecule += 1
                 counterInSystem += 1
 
-        for m in self.molecules:
+        for i,m in enumerate(self.molecules):
             for b in m.bonds:
-                b.atom1 = oldToNewSerialMap[b.atom1]
-                b.atom2 = oldToNewSerialMap[b.atom2]
+                b.atom1 = oldToNewSerialMap[i][b.atom1]
+                b.atom2 = oldToNewSerialMap[i][b.atom2]
 
-        for (i, b) in enumerate(self.interMolecularBonds):
+        for b in self.interMolecularBonds:
             b.atom1 = oldToNewSystemwideSerialMap[b.atom1]
             b.atom2 = oldToNewSystemwideSerialMap[b.atom2]
 
     def AutoDetectBonds(self, autoBondDetector, flushCurrentBonds = False):
         autoBondDetector.Detect(self, flushCurrentBonds)
+
+    def Translate(self,dx,dy,dz):
+        # Molecule.Translate is not defined. Seems unnecessary.
+        for m in self.molecules:
+            for a in m.atoms:
+                a.Translate(dx,dy,dz)
+
+    def FractionalToCartesianCoordinates(self):
+        # Now support only orthogonal systems.
+        A = self.boundary[0][0]
+        B = self.boundary[1][1]
+        C = self.boundary[2][2]
+        for m in self.molecules:
+            for a in m.atoms:
+                a.x *= A
+                a.y *= B
+                a.z *= C
 
     # Read and Write operations are delegated to concrete MolecularFile classes.
     def Summary(self):
@@ -232,7 +290,7 @@ class MolecularSystem:
         for m in self.molecules:
             atomCount += len(m.atoms)
             bondCount += len(m.bonds)
-            m.Summary()
+            #m.Summary()
         output("Molecular System has {} molecules, {} atoms, {} intra-molecular bonds, and {} inter-molecular bonds".format(
             molCount,atomCount,bondCount,len(self.interMolecularBonds)))
 

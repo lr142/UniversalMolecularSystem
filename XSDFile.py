@@ -75,7 +75,7 @@ def ReadMolecularStructureFromAXSDNodeTree(molecularSystem, rootNode):
         elif node.name == 'Atom3d':
             newAtom = Atom()
             newAtom.element = node.properties['Components']
-            newAtom.serial = node.properties['ID']
+            newAtom.serial = newAtom.systemwideSerial = node.properties['ID']
             (newAtom.x,newAtom.y,newAtom.z) = (float(num) for num in node.properties['XYZ'].split(','))
 
             if 'Parent' in node.properties:
@@ -93,6 +93,21 @@ def ReadMolecularStructureFromAXSDNodeTree(molecularSystem, rootNode):
             (newBond.atom1,newBond.atom2) = node.properties['Connects'].split(',')
             newBond.type = node.properties['Type'] if 'Type' in node.properties else '1'    # Type is also not always present
             tempBondCollection.append(newBond)
+
+        elif node.name == 'SpaceGroup':   # Unit Cell size can be read. The info are given like below. We need the AVector/BVector/CVector
+            #<SpaceGroup ID="4" Parent="2" Children="83672" AVector="79.1697982956743,0,0" BVector="0,79.1697982956743,0" CVector="0,0,79.1697982956743"
+            # OrientationBase="C along Z, B in YZ plane" Centering="3D Primitive-Centered"
+            # Lattice="3D Triclinic" GroupName="P1" Operators="1,0,0,0,0,1,0,0,0,0,1,0" DisplayRange="0,1,0,1,0,1" LineThickness="2"
+            # CylinderRadius="0.2" LabelAxes="1" ActiveSystem="2" ITNumber="1" LongName="P 1" Qualifier="Origin-1" SchoenfliesName="C1-1"
+            # System="Triclinic" Class="1"/>
+            molecularSystem.boundary = [[],[],[]]
+            vectors = ['AVector','BVector','CVector']
+            for i, vec in enumerate(vectors):
+                v = node.properties[vec].split(',')
+                for j in range(3):
+                    v[j] = float(v[j])
+                import copy
+                molecularSystem.boundary[i] = copy.copy(v)
 
         else:
             pass
@@ -216,24 +231,11 @@ class XSDFile(MolecularFile):
 
 def TestXSDFile():
     ms = MolecularSystem()
-    ms.Read(XSDFile(),'testcase/Coal100_10_100.xsd')
+    ms.Read(XSDFile(),'testcase/Coal100.xsd')
 
     ms.Summary()
-    output.setoutput(open('testcase/dumpSeparate.mol2','w'))
-    ms.Write(MOL2File())
+    output(ms.boundary)
 
-    output.setoutput(None)
-    mol = ReduceSystemToOneMolecule(ms)
-    ms = MolecularSystem()
-    ms.molecules.append(mol)
-    ms.Write(MOL2File())
-    ms.Summary()
-    output.setoutput(open('testcase/dumpCombined.mol2','w'))
-    ms.Write(MOL2File())
-
-    output.setoutput(None)
-    ms = BreakupMoleculeByConnectivity(ms.molecules[0])
-    ms.Summary()
-    output.setoutput(open('testcase/dumpAsChains.mol2', 'w'))
+    output.setoutput(open('testcase/dump.mol2', 'w'))
     ms.Write(MOL2File())
 

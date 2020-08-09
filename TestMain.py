@@ -16,4 +16,6 @@ from BondDetection import *
 
 #TestXSDFile()
 
-TestBondDetection()
+#TestBondDetection()
+
+TestBreakupMolecule()

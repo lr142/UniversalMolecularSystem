@@ -32,6 +32,7 @@ from UniversalMolecularSystem import *
 from XYZFile import *
 from MOL2File import *
 from MolecularManipulation import *
+from PDBFile import *
 
 class Rule:
     ele1: str
@@ -191,12 +192,13 @@ def TestBondDetection():
     r = DefaultBondRules()
     ms = MolecularSystem()
 
-    ms.Read(XYZFile(),'testcase/Given1.xyz')
+    ms.Read(PDBFile(),'GenerateMoltemplateLTFileFromMOL2/000.Common.Files.Read.Only/water.and.ch4.cells/4158methane.pdb')
 
 
     ms2 = MolecularSystem()
-    ms2 = BreakupMoleculeRandomly(ms.molecules[0],10)
-    ms2.interMolecularBonds = []
+    # ms2 = BreakupMoleculeRandomly(ms.molecules[0],10)
+    # ms2.interMolecularBonds = []
+    ms2 = ms
 
 
 
@@ -211,7 +213,7 @@ def TestBondDetection():
         for i in range(random.randint(0,len(ms2.interMolecularBonds))):
             del(ms2.interMolecularBonds[-1])
 
-    for i in range(500):
+    for i in range(0):
         RandDelBonds()
         ms2.AutoDetectBonds(r)
 
