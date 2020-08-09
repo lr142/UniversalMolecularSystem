@@ -2,6 +2,7 @@
 # Pycharm environment
 .idea
 .DS_Store
+dump*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
