@@ -255,16 +255,25 @@ def DuplicateSystemPeriodically(moleculerSystem,images):
         B = float(moleculerSystem.boundary[1][1])
         C = float(moleculerSystem.boundary[2][2])
     except:
-        error("In DuplicateSystemPeriodically(), the system is requirement to have a periodic unit cell size.",False)
+        error("In DuplicateSystemPeriodically(), the system is required to have a periodic unit cell size.",False)
         return False
 
-    for img in images:
+    showProgress = False
+    if len(images) * moleculerSystem.AtomCount() > 10000:
+        showProgress = True
+    if showProgress:
+        output("Duplicating system {} in {} periodic images...".format(moleculerSystem.name,len(images)))
 
-        output(img)
+    for i,img in enumerate(images):
+
+        # If there are many atoms, show a progress bar.
+        if showProgress:
+            ProgressBar(float(i)/len(images))
 
         for i in range(3):
             if type(img[i]) != int:
-                error("In DuplicateSystemPeriodically(), the image indicators must be integers.", False)
+                error("In DuplicateSystemPeriodically() for system {}, the image indicators "
+                "must be integers.".format(moleculerSystem.name), False)
                 return False
         if img[0] == 0 and img[1] == 0 and img[2] == 0:
             continue
@@ -277,7 +286,9 @@ def DuplicateSystemPeriodically(moleculerSystem,images):
         newMS.Translate(dx,dy,dz)
         ExtendSystem(moleculerSystem, newMS)
 
-
+    if showProgress:
+        ProgressBar(1.0)
+        output('')
 
     del copyOfOriginalSystem
     return True

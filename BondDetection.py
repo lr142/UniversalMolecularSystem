@@ -128,6 +128,32 @@ class NeighborList:
 
         return [ix,iy,iz]
 
+    def DetectClashing(self,guestAtomList,minDist):
+        # This function tests whether atoms in the guestAtomList clashes with any of the atoms that are used to
+        # construct this neighbor list. minDist is the minimal distance that is considered to be a clash.
+        # This function, if successful, returns a list of Bool with the same length as the guestAtomList, indicating
+        # whether or not each atom in guestAtomList clashes with the host system. (True for clash, False for non-clash)
+        # If a guestAtom is outside the box of the host system, ie, guestAtom.x not in [self.minx, self.maxx], etc, it's
+        # considered to be a non-clash.
+        result = [None for i in range(len(guestAtomList))]
+        neighbors = None
+        for index, guestAtom in enumerate(guestAtomList):
+            result[index] = False
+            ix,iy,iz = self._find_grid_(guestAtom.x,guestAtom.y,guestAtom.z)
+            if ix<0 or ix>=self.Nx or iy<0 or iy>= self.Ny or iz<=0 or iz>=self.Nz:
+                # guest atom outside the box, it's a non-clash
+                continue
+            neighbors = self.grid[ix][iy][iz]
+            for hostAtom in neighbors:
+                dist = Distance(hostAtom,guestAtom)
+                if dist <= minDist:
+                    result[index] = True
+                    break
+
+        return result
+
+
+
 
 
 
@@ -141,8 +167,14 @@ class Rule:
         pass
 
 class BondRules(BondDetector):
-    def __init__(self):
+    def __init__(self,globalCutoff = 5.0):
         self.rules = []
+        self.globalCutoff = globalCutoff
+        # Optional parameter global cutoff is used to build neighbor list as the grid size. Set this parameter to
+        # be slightly larger than the maximum bond length in your system. If this value is too large, bond detection
+        # may be very slow for large systems. If this value is too small, you may miss some bonds.
+
+
 
     def ParseFile(self,file_name):
         lines = None
@@ -195,17 +227,19 @@ class BondRules(BondDetector):
                 atomList.append(a)
 
         # Performs a 2-body scan.
-        # For system contains more than 1E4 atoms, O(N^2) is not acceptable. A neighbor list is needed here.
+        # For system contains more than 10^4 atoms, O(N^2) is not acceptable. A neighbor list is needed here.
         N = len(atomList)
         if N > 10000:
-            output("Building NeighborList...")
-        neighList = NeighborList(atomList,2.0)
+            output("Building NeighborList for system {} with grid size {} Å...".format(molecularSystem.name,self.globalCutoff))
+        neighList = NeighborList(atomList,self.globalCutoff)
         if N > 10000:
-            output("NeighborList Building Done.\n")
+            output("NeighborList Built.")
+            output("Scanning for Bonds:")
 
         for i in range(N):
-            if N > 10000 and i%10000 == 0:
-                output("Sanning for Bonds. Completed for {} out of {} atoms".format(i,N))
+            if N > 10000 and i%1000 == 0:
+                ProgressBar(float(i)/N)
+
             a1 = atomList[i]
             neighbors = neighList.GetNeighborList(i)
             for a2 in neighbors:
@@ -232,6 +266,9 @@ class BondRules(BondDetector):
                 # rule will be recorded. In other words, bond rules that appear later will override previous ones.
                 if newBond != None:
                     tempBondList.append(newBond)
+        if N > 10000:
+            ProgressBar(1.0)
+            output('')
 
 
 
@@ -292,10 +329,9 @@ class BondRules(BondDetector):
 
         return True
 
-def DefaultBondRules():
+def DefaultBondRules(globalCutoff = 5.0):
     # This is a factory method that returns a BondRules object which reads the default bond rule file 'bondrules.csv'
-    bondRules = BondRules()
-    rules = BondRules()
+    rules = BondRules(globalCutoff)
     import os
     default_route = '{}/{}'.format(os.path.dirname(__file__),"bondrules.csv")
     # the first part of the path is needed if case the script is called from other directories

@@ -207,10 +207,12 @@ class MolecularSystem:
     molecules: [Molecule]
     boundary: []
     interMolecularBonds: [Bond]
-    def __init__(self):
+    name: str
+    def __init__(self,name=None):
         self.molecules = []
         self.boundary = None;    # boundary should be a 3x3 matrix for an orthogonal system
         self.interMolecularBonds = []
+        self.name = name;
     def Read(self,molecularFile,filename):
         molecularFile.Read(self,filename)
         # perform a consistency check, and create necessary auxiliary data structures
@@ -232,6 +234,12 @@ class MolecularSystem:
             newMS.interMolecularBonds.append(b.Copy())
         newMS.boundary = copy.deepcopy(self.boundary)
         return newMS
+
+    def AtomCount(self):
+        atomCount = 0
+        for m in self.molecules:
+            atomCount += len(m.atoms)
+        return atomCount
 
     def RenumberAtomSerials(self, startingSystemwideSerial = 1):
         # renumber atom serials and systemwideSerials. This is required in most cases where the atoms must have a
@@ -285,14 +293,12 @@ class MolecularSystem:
     # Read and Write operations are delegated to concrete MolecularFile classes.
     def Summary(self):
         molCount = len(self.molecules)
-        atomCount = 0
         bondCount = 0
         for m in self.molecules:
-            atomCount += len(m.atoms)
             bondCount += len(m.bonds)
             #m.Summary()
-        output("Molecular System has {} molecules, {} atoms, {} intra-molecular bonds, and {} inter-molecular bonds".format(
-            molCount,atomCount,bondCount,len(self.interMolecularBonds)))
+        output("MolecularSystem {} has {} molecules, {} atoms, {} intra-molecular bonds, and {} inter-molecular bonds".format(
+            self.name,molCount,self.AtomCount(),bondCount,len(self.interMolecularBonds)))
 
 
 # Legacy Codes to be rewritten

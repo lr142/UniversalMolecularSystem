@@ -1,5 +1,6 @@
 # Public utility functions and classes. Implement commonly used constants, mathematical functions, etc
 import math
+import sys
 
 class PeriodicTable:
     def __init__(self):
@@ -94,6 +95,7 @@ def Distance(atom1, atom2):
         math.pow(atom1.z - atom2.z,2)
     )
 
+
 # String Manipulations
 # Note: Due to my lack of knowledge in this field, there may be better ways to implement the following functions,
 # for example through regular expressions. Please bear with the clumsiness of these functions. At least they work.
@@ -109,3 +111,7 @@ def StringTok(string, token):
         return (string[0:pos].strip(), string[pos + len(token):].strip())
 
 
+def ProgressBar(percent,length = 50):
+    filled = round(length * percent)
+    bar = '['+''.join(['#' for i in range(filled)]) + ''.join([' ' for i in range(length-filled)])+']'
+    sys.stdout.write('\r{} {:.2f}%'.format(bar,percent*100.0))
