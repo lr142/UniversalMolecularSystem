@@ -13,5 +13,4 @@ write_once("In Init"){
 }
 
 mol1 =  new Given1.move(25,25,25)
-mol2 =  new Given2.move(25,25,50)
-mol3 =  new FuchsSandoff.move(25,25,75)
+
