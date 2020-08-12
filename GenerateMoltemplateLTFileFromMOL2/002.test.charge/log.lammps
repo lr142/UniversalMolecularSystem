@@ -1,4 +1,8 @@
 LAMMPS (3 Mar 2020)
+
+
+# ----------------- Init Section -----------------
+
 include "system.in.init"
     units real
     atom_style full
@@ -11,33 +15,40 @@ include "system.in.init"
     special_bonds lj/coul 0.0 0.0 0.5
     kspace_style pppm 0.0001
     boundary p p p
+
+
+# ----------------- Atom Definition Section -----------------
+
 read_data "system.data"
   orthogonal box = (0 0 0) to (100 100 100)
   1 by 2 by 2 MPI processor grid
   reading atoms ...
-  130 atoms
+  573 atoms
   scanning bonds ...
-  3 = max bonds/atom
+  4 = max bonds/atom
   scanning angles ...
   6 = max angles/atom
   scanning dihedrals ...
-  19 = max dihedrals/atom
+  20 = max dihedrals/atom
   scanning impropers ...
   3 = max impropers/atom
   reading bonds ...
-  142 bonds
+  651 bonds
   reading angles ...
-  260 angles
+  1229 angles
   reading dihedrals ...
-  373 dihedrals
+  1961 dihedrals
   reading impropers ...
-  109 impropers
+  593 impropers
   4 = max # of 1-2 neighbors
   9 = max # of 1-3 neighbors
-  21 = max # of 1-4 neighbors
-  22 = max # of special neighbors
-  special bonds CPU = 0.00098896 secs
-  read_data CPU = 0.00512409 secs
+  24 = max # of 1-4 neighbors
+  25 = max # of special neighbors
+  special bonds CPU = 0.00124216 secs
+  read_data CPU = 0.00885487 secs
+
+# ----------------- Settings Section -----------------
+
 include "system.in.settings"
     pair_coeff 1 1  0.061 2.94
     pair_coeff 2 2  0.118 3.905
@@ -3180,6 +3191,12 @@ include "system.in.settings"
     # improper_coeff @improper:X_102_103_103  10.5 180.0  ?
     # but I'd prefer to leave this out.
 
+    	group gCH4 type 83 85
+192 atoms in group gCH4
+
+
+# ----------------- Charges Section -----------------
+
 include "system.in.charges"
     set type 1 charge -0.22  # "Fluoride -CH2-F (UA)"
   0 settings made for charge
@@ -3340,47 +3357,47 @@ include "system.in.charges"
     set type 79 charge 0.34  # "Ammonia NH3"
   0 settings made for charge
     set type 80 charge -0.18  # "Alkane CH3-"
-  3 settings made for charge
+  18 settings made for charge
     set type 81 charge -0.12  # "Alkane -CH2-"
-  5 settings made for charge
+  62 settings made for charge
     set type 82 charge -0.06  # "Alkane >CH-"
-  2 settings made for charge
+  23 settings made for charge
     set type 83 charge -0.24  # "Methane CH4"
-  0 settings made for charge
+  1 settings made for charge
     set type 84 charge 0.0  # "Alkane >C<"
-  0 settings made for charge
+  1 settings made for charge
     set type 85 charge 0.06  # "Alkane H-C"
-  55 settings made for charge
+  191 settings made for charge
     set type 86 charge 0.0  # "Alkene R2-C="
-  2 settings made for charge
+  13 settings made for charge
     set type 87 charge -0.115  # "Alkene RH-C="
-  0 settings made for charge
+  1 settings made for charge
     set type 88 charge -0.23  # "Alkene H2-C="
   0 settings made for charge
     set type 89 charge 0.115  # "Alkene H-C="
-  0 settings made for charge
+  1 settings made for charge
     set type 90 charge -0.115  # "Aromatic C"
-  14 settings made for charge
+  100 settings made for charge
     set type 91 charge 0.115  # "Aromatic H-C"
-  3 settings made for charge
+  35 settings made for charge
     set type 92 charge 0.0  # "Naphthalene Fusion C"
-  12 settings made for charge
+  71 settings made for charge
     set type 93 charge -0.065  # "Ethyl Benzene CH3-"
-  7 settings made for charge
+  0 settings made for charge
     set type 94 charge -0.005  # "Ethyl Benzene -CH2-"
-  5 settings made for charge
+  0 settings made for charge
     set type 95 charge -0.115  # "Diene =CH-CH="
   0 settings made for charge
     set type 96 charge -0.683  # "Alcohol -OH"
-  0 settings made for charge
+  2 settings made for charge
     set type 97 charge 0.418  # "Alcohol -OH"
-  0 settings made for charge
+  2 settings made for charge
     set type 98 charge 0.04  # "Methanol CH3-"
   0 settings made for charge
     set type 99 charge 0.145  # "Alcohol CH3OH & RCH2OH"
   0 settings made for charge
     set type 100 charge 0.205  # "Alcohol R2CHOH"
-  0 settings made for charge
+  1 settings made for charge
     set type 101 charge 0.265  # "Alcohol R3COH"
   0 settings made for charge
     set type 102 charge 0.1263  # "Trifluoroethanol -CH2-"
@@ -3396,11 +3413,11 @@ include "system.in.charges"
     set type 107 charge 0.0825  # "Trifluoroethanol -CH2-"
   0 settings made for charge
     set type 108 charge 0.15  # "Phenol C-OH"
-  3 settings made for charge
+  8 settings made for charge
     set type 109 charge -0.585  # "Phenol -OH"
-  3 settings made for charge
+  8 settings made for charge
     set type 110 charge 0.435  # "Phenol -OH"
-  3 settings made for charge
+  8 settings made for charge
     set type 111 charge -0.7  # "Diol -OH"
   0 settings made for charge
     set type 112 charge 0.435  # "Diol -OH"
@@ -3418,13 +3435,13 @@ include "system.in.charges"
     set type 118 charge 0.06  # "Diol & Triol H-COH"
   0 settings made for charge
     set type 119 charge -0.17  # "Diphenyl Ether"
-  0 settings made for charge
+  5 settings made for charge
     set type 120 charge 0.0  # "Diene =CR-CR="
   0 settings made for charge
     set type 121 charge -0.285  # "Anisole -OCH3"
   0 settings made for charge
     set type 122 charge -0.4  # "Dialkyl Ether -O-"
-  0 settings made for charge
+  2 settings made for charge
     set type 123 charge 0.11  # "Methyl Ether CH3OR"
   0 settings made for charge
     set type 124 charge 0.14  # "Ethyl Ether -CH2OR"
@@ -3468,7 +3485,7 @@ include "system.in.charges"
     set type 143 charge -0.47  # "Hydrogen Sulfide H2S"
   0 settings made for charge
     set type 144 charge -0.435  # "Sulfide -S-"
-  0 settings made for charge
+  1 settings made for charge
     set type 145 charge -0.2175  # "Disulfide -S-S-"
   0 settings made for charge
     set type 146 charge 0.155  # "Thiol -SH"
@@ -3526,7 +3543,7 @@ include "system.in.charges"
     set type 172 charge 0.2  # "Amide -NH-CR3"
   0 settings made for charge
     set type 173 charge 0.7  # "Benzophenone C=O"
-  0 settings made for charge
+  4 settings made for charge
     set type 174 charge 0.565  # "Benzaldehyde C=O"
   0 settings made for charge
     set type 175 charge 0.585  # "Acetophenone C=O"
@@ -3624,9 +3641,9 @@ include "system.in.charges"
     set type 221 charge 0.0  # "Aldehyde/Formamide H-C=O"
   0 settings made for charge
     set type 222 charge 0.47  # "Ketone C=O"
-  2 settings made for charge
+  3 settings made for charge
     set type 223 charge -0.47  # "Ketone C=O"
-  2 settings made for charge
+  7 settings made for charge
     set type 224 charge 0.06  # "Acyl H-C-COX"
   0 settings made for charge
     set type 225 charge 0.04  # "C-Terminal ALA CA"
@@ -4092,7 +4109,7 @@ include "system.in.charges"
     set type 455 charge -0.115  # "TRP CD1"
   0 settings made for charge
     set type 456 charge 0.055  # "i-Pr Benzene -CHMe2"
-  1 settings made for charge
+  0 settings made for charge
     set type 457 charge 0.115  # "t-Bu Benzene -CMe3"
   0 settings made for charge
     set type 458 charge -0.03  # "Vinyl Ether =CH-OR"
@@ -4102,13 +4119,13 @@ include "system.in.charges"
     set type 460 charge 0.0  # "Biphenyl C1"
   0 settings made for charge
     set type 461 charge -0.678  # "Pyridine N"
-  1 settings made for charge
+  3 settings made for charge
     set type 462 charge 0.473  # "Pyridine C1"
-  1 settings made for charge
+  0 settings made for charge
     set type 463 charge -0.447  # "Pyridine C2"
-  2 settings made for charge
+  0 settings made for charge
     set type 464 charge 0.227  # "Pyridine C3"
-  1 settings made for charge
+  0 settings made for charge
     set type 465 charge 0.012  # "Pyridine H1"
   0 settings made for charge
     set type 466 charge 0.155  # "Pyridine H2"
@@ -4420,7 +4437,7 @@ include "system.in.charges"
     set type 619 charge -0.025  # "2-Me Pyrrole CH3"
   0 settings made for charge
     set type 620 charge 0.035  # "2-Et Pyrrole CH2"
-  1 settings made for charge
+  0 settings made for charge
     set type 621 charge -0.038  # "2-Me Furan CH3"
   0 settings made for charge
     set type 622 charge 0.022  # "2-Et Furan CH2"
@@ -4442,9 +4459,9 @@ include "system.in.charges"
     set type 630 charge -0.008  # "3-Me Indole CH3"
   0 settings made for charge
     set type 631 charge 0.588  # "2-Phenyl Pyridine C2"
-  1 settings made for charge
+  0 settings made for charge
     set type 632 charge -0.103  # "2-Phenyl Pyridine C2'"
-  1 settings made for charge
+  0 settings made for charge
     set type 633 charge -0.332  # "2-Phenyl Pyridine C3"
   0 settings made for charge
     set type 634 charge 0.04  # "2-Phenyl Pyridine C3'"
@@ -4642,7 +4659,7 @@ include "system.in.charges"
     set type 730 charge -0.9  # "Amine RNH2"
   0 settings made for charge
     set type 731 charge -0.78  # "Amine R2NH"
-  0 settings made for charge
+  1 settings made for charge
     set type 732 charge -0.63  # "Amine R3N"
   0 settings made for charge
     set type 733 charge 0.0  # "Amine CH3-NH2"
@@ -4660,7 +4677,7 @@ include "system.in.charges"
     set type 739 charge 0.36  # "Amine RNH2"
   0 settings made for charge
     set type 740 charge 0.38  # "Amine R2NH"
-  0 settings made for charge
+  1 settings made for charge
     set type 741 charge 0.06  # "Amine H-C-N"
   0 settings made for charge
     set type 742 charge 0.12  # "Amine R2CH-NH2"
@@ -4994,17 +5011,44 @@ include "system.in.charges"
     set type 906 charge 0.088  # "N-Me-HIS CB"
   0 settings made for charge
 
-write_data "charge.data"
+
+# ----------------- Run Section -----------------
+
+# The lines above define the system you want to simulate.
+# What you do next is up to you.
+# Typically a user would minimize and equilibrate
+# the system using commands similar to the following:
+#  ----   examples   ----
+#
+#  -- minimize --
+# minimize 1.0e-5 1.0e-7 1000 10000
+# (Note: Some fixes, for example "shake", interfere with the minimize command,
+#        You can use the "unfix" command to disable them before minimization.)
+#  -- declare time step for normal MD --
+# timestep 1.0
+#  -- run at constant pressure (Nose-Hoover)--
+# fix   fxnpt all npt temp 300.0 300.0 100.0 iso 1.0 1.0 1000.0 drag 1.0
+#  -- ALTERNATELY, run at constant volume (Nose-Hoover) --
+# fix   fxnvt all nvt temp 300.0 300.0 500.0 tchain 1
+#  -- ALTERNATELY, run at constant volume using Langevin dynamics. --
+#  -- (This is good for sparse CG polymers in implicit solvent.)   --
+# fix fxLAN all langevin 300.0 300.0 5000 48279
+# fix fxNVE all nve  #(<--needed by fix langevin)
+#  -- Now, finally run the simulation --
+# run   50000
+#  ---- (end of examples) ----
+
+write_data "read.data"
 PPPM initialization ...
-WARNING: System is not charge neutral, net charge = -0.002 (../kspace.cpp:313)
+WARNING: System is not charge neutral, net charge = -12.239 (../kspace.cpp:313)
   using 12-bit tables for long-range coulomb (../kspace.cpp:332)
-  G vector (1/distance) = 0.112166
-  grid = 10 10 10
+  G vector (1/distance) = 0.148091
+  grid = 15 15 15
   stencil order = 5
-  estimated absolute RMS force accuracy = 0.034568
-  estimated relative force accuracy = 0.0001041
+  estimated absolute RMS force accuracy = 0.0232941
+  estimated relative force accuracy = 7.01494e-05
   using double precision KISS FFT
-  3d grid and FFT values/proc = 1500 300
+  3d grid and FFT values/proc = 3380 960
 Neighbor list info ...
   update every 1 steps, delay 10 steps, check yes
   max neighbors/atom: 2000, page size: 100000

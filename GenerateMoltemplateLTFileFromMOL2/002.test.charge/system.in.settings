@@ -3139,3 +3139,4 @@
     # improper_coeff @improper:X_102_103_103  10.5 180.0  ?
     # but I'd prefer to leave this out.
 
+    	group gCH4 type 83 85

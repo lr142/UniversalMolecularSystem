@@ -1,7 +1,8 @@
 import "oplsaa.lt"
-import "given1.lt"
-import "given2.lt"
-import "fuchssandoff.lt"
+import "../given1.lt"
+import "../given2.lt"
+import "../fuchssandoff.lt"
+import "methane.lt"
 write_once("Data Boundary"){
     0 100 xlo xhi
     0 100 ylo yhi
@@ -12,5 +13,7 @@ write_once("In Init"){
     boundary p p p
 }
 
-mol1 =  new Given1.move(25,25,25)
-
+mol1 =  new Given1
+mol2 =  new Given2
+mol3 =  new FuchsSandoff
+mol4 =  new Methane
