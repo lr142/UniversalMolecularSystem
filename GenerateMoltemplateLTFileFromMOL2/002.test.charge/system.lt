@@ -1,7 +1,7 @@
 import "oplsaa.lt"
-import "../given1.lt"
-import "../given2.lt"
-import "../fuchssandoff.lt"
+import "given1.lt"
+import "given2.lt"
+import "fuchssandoff.lt"
 import "methane.lt"
 write_once("Data Boundary"){
     0 100 xlo xhi

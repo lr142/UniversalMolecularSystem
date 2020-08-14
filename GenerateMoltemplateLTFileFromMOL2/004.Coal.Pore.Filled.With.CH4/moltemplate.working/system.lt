@@ -1,0 +1,23 @@
+import "oplsaa.lt"
+import "../given1.nb.lt"
+import "../given2.nb.lt"
+import "../fuchssandoff.nb.lt"
+import "../methane.lt"
+import "../tip4p.lt"
+import "../tip4p2005.lt"
+write_once("Data Boundary"){
+
+     0 395.8489914783715 xlo xhi
+     -15 115 ylo yhi
+     -15 115 zlo zhi
+}
+write_once("In Init"){
+     boundary p p p
+}
+g1 = new Given1[430]
+g2 = new Given2[45]
+fs = new FuchsSandoff[470]
+ch4 = new Methane[3100]
+write_once("In Settings"){
+     group gCH4 id 181861:197360
+}

@@ -3,6 +3,11 @@
 .idea
 .DS_Store
 dump*
+output_ttree
+*lammps*
+*data*
+*moltemplate*
+*ttree*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
