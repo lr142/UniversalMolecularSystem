@@ -56,10 +56,12 @@ class MoltemplateLTFile(MolecularFile):
 
 file_names = [["Given1.mol2","Given1.csv","given1.lt","given1.nb.lt"],
             ["Given2.mol2","Given2.csv","given2.lt","given2.nb.lt"],
-            ["FuchsSandoff.mol2","FuchsSandoff.csv","fuchssandoff.lt","fuchssandoff.nb.lt"]
+            ["FuchsSandoff.mol2","FuchsSandoff.csv","fuchssandoff.lt","fuchssandoff.nb.lt"],
+              ["c4rings.mol2","c4rings.csv","c4rings.lt","c4rings.nb.lt"]
+
          ]
 
-for i in range(3):
+for i in range(len(file_names)):
     s = MolecularSystem()
     s.Read(MOL2File(),file_names[i][0])
 
