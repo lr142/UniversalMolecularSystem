@@ -94,7 +94,40 @@ def Distance(atom1, atom2):
         math.pow(atom1.y - atom2.y,2) +
         math.pow(atom1.z - atom2.z,2)
     )
+def VectorAdd(v1,v2):
+    result = [v1[i]+v2[i] for i in range(len(v1))]
+    return result
 
+def VectorMinus(v1,v2):
+    result = [v1[i]-v2[i] for i in range(len(v1))]
+    return result
+
+def VectorNorm(v):
+    import math
+    sum = 0.0
+    for x in v:
+        sum += math.pow(x,2)
+    return math.sqrt(sum)
+
+def VectorNormalize(v):
+    return VectorScalarProduct(v, 1.0/VectorNorm(v))
+
+def VectorScalarProduct(v,scale):
+    result = [x*scale for x in v]
+    return result
+
+def VectorDotProduct(v1,v2):
+    sum = 0.0
+    for i in range(len(v1)):
+        sum += v1[i] * v2[i]
+    return sum
+
+def VectorCrossProduct(v1,v2):
+    result = [0,0,0]
+    result[0] =   v1[1]*v2[2] - v1[2]*v2[1]
+    result[1] = - v1[0]*v2[2] + v1[2]*v2[0]
+    result[2] =   v1[0]*v2[1] - v1[1]*v2[0]
+    return result
 
 # String Manipulations
 # Note: Due to my lack of knowledge in this field, there may be better ways to implement the following functions,

@@ -39,28 +39,14 @@ def CalculatePlacement(ms,part2_atoms,distance,distance_measure_part1,distance_m
     newDist = Dist(from_point,[to_atom.x,to_atom.y,to_atom.z])
     output("  new_distance    = {}".format(newDist))
 
+# For different cases, just load different settings
+#from SettingsForC4R_CH4 import *
+#from SettingsForC4R_H2O import *
+from SettingsForCH4_H2O import *
 
 
 def Main():
-    xyzfile = "fs.xyz"
-    #CommandLine = "B3LYP D3 def2-TZVP def2/J RIJCOSX noautostart miniprint nopop"
-    #CommandLine = "PWPB95 D3 def2-QZVPP def2/J def2-QZVPP/C RIJCOSX grid4 gridx4 tightSCF noautostart miniprint nopop"
-    CommandLine = "DLPNO-CCSD(T) normalPNO RIJK cc-pVTZ cc-pVTZ/JK cc-pVTZ/C tightSCF noautostart miniprint nopop"
-    maxcore = 3500
-    nprocs = 12
-    part1_atoms = set(range(26))    # atom indexes starting from 0
-    part2_atoms = set(range(26,31))
 
-    distance = list(range(20,61,2))   # in units of 0.1 Å
-    for i,d in enumerate(distance):
-        distance[i] /= 10.0
-
-    #distance.append(3.47716)
-
-    distance_measure_part1 = [2, 3, 9, 10]
-    # atom indexes in each part for measuring distances. On part1, multiple atoms may be used as the indicator, which
-    # is useful in measuring the distance between a water and an aromatic ring.
-    distance_measure_part2 = 26
 
 
     ms = MolecularSystem()
@@ -97,12 +83,15 @@ def Main():
 
             import os
             os.system('if [ ! -d {} ];then mkdir {};fi'.format(dist,dist))
-            with open('{}/{}.inp'.format(dist,xyzfile.split('.')[0]),"w") as outputfile:
+            with open('{}/{}.inp'.format(dist,prefix),"w") as outputfile:
                 for l in lines:
                     outputfile.write(l+"\n")
 
-        currentXYZ = "{}/{}".format(dist,xyzfile)
+        currentXYZ = "{}/{}.xyz".format(dist,prefix)
         with open(currentXYZ,'w') as xyzhandle:
+            from TIP4PAdjustment import AdjustForTIP4P
+            AdjustForTIP4P(newMS)
+
             output.setoutput(xyzhandle)
             newMS.Write(XYZFile())
         output.setoutput(None)
