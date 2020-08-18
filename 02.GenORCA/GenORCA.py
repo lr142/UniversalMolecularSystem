@@ -47,8 +47,6 @@ from SettingsForCH4_H2O import *
 
 def Main():
 
-
-
     ms = MolecularSystem()
     ms.Read(XYZFile(),xyzfile)
 

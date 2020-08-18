@@ -8,6 +8,8 @@ output_ttree
 *data*
 *moltemplate*
 *ttree*
+*xsd
+*result*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
