@@ -1,8 +1,0 @@
-tolerance 2.0
-filetype pdb
-output 1262methane.pdb
-
-structure CH4.pdb
-	  number 1262
-	  inside cube 0 0 0 98
-end structure
