@@ -1,0 +1,10 @@
+include "system.in.init"
+read_data "system.data"
+include "system.in.settings"
+include "system.in.charges"
+
+thermo	 1
+thermo_style  custom step temp press pe ke etotal evdwl ecoul elong epair time
+
+timestep 0
+run      1

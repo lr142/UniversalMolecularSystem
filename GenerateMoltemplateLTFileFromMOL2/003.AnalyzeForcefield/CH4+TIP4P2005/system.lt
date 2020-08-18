@@ -1,0 +1,17 @@
+import "oplsaa.lt"
+#import "../../c4rings.lt"
+import "../../methane.lt"
+#import "../../tip4p.lt"
+import "../../tip4p2005.lt"
+write_once("Data Boundary"){
+    -100 100 xlo xhi
+    -100 100 ylo yhi
+    -20 180 zlo zhi
+}
+
+write_once("In Init"){
+    boundary p p p
+}
+
+c4r = new Methane
+ch4 = new TIP4P2005

@@ -1,0 +1,50 @@
+# tip4p2005.lt
+#import "oplsaa.lt"
+
+# Hypothetic TIP4P wat molecular possessing dipole of an isolate water in vacuum: 1.85 debye
+
+TIP4PMod{
+    write("Data Atoms"){
+        # atomID     molID     atomType             charge     x      y       z
+        $atom:O      $mol:.    @atom:T4P05-O         0.0      0.0    0.0     0.0
+        $atom:M      $mol:.    @atom:T4P05-M        -0.884   0.0    0.0     0.15
+        $atom:H1     $mol:.    @atom:T4P05-H         0.442   0.0    -0.75695     0.5859
+        $atom:H2     $mol:.    @atom:T4P05-H         0.442   0.0    +0.75695     0.5859     
+    }
+
+    write_once("Data Masses"){
+        @atom:T4P05-O  15.999
+        @atom:T4P05-H   1.008
+        @atom:T4P05-M   1e-30
+    }
+
+    write("Data Bonds"){
+        $bond:OH1   @bond:T4P05-OH  $atom:O  $atom:H1
+        $bond:OH2   @bond:T4P05-OH  $atom:O  $atom:H2
+        $bond:OM    @bond:T4P05-OM  $atom:O  $atom:M
+    }
+    
+    write("Data Angles"){
+        $angle:H1OH2  @angle:T4P05-HOH $atom:H1 $atom:O $atom:H2
+        $angle:H1OM   @angle:T4P05-HOM $atom:H1 $atom:O $atom:M
+        $angle:H2OM   @angle:T4P05-HOM $atom:H2 $atom:O $atom:M
+    }
+
+    write_once("In Settings"){
+        pair_coeff @atom:T4P05-O  @atom:T4P05-O 0.1853 3.1589
+        pair_coeff @atom:T4P05-M  @atom:T4P05-M 0.0    0.0
+        pair_coeff @atom:T4P05-H  @atom:T4P05-H 0.0    0.0
+        bond_coeff @bond:T4P05-OH  600.0 0.9572
+        bond_coeff @bond:T4P05-OM  900.0 0.1546
+        angle_coeff @angle:T4P05-HOH  75.0 104.52
+        angle_coeff @angle:T4P05-HOM  50.0 52.26
+    }
+
+    write_once("In Settings"){
+        group gTIP4P2005 type @atom:T4P05-O @atom:T4P05-M @atom:T4P05-H
+    }
+}
+
+        
+
+        

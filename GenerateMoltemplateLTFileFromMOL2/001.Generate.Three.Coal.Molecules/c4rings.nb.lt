@@ -1,0 +1,32 @@
+import "oplsaa.lt"
+# Automatically generated from python script with user-designated force field type for each atom
+C4Rings inherits OPLSAA{
+  write('Data Atoms'){
+    $atom:C1   $mol:.   @atom:90   0.0    19.212999   20.855   0.243
+    $atom:C2   $mol:.   @atom:90   0.0    19.976   19.649   0.115
+    $atom:C3   $mol:.   @atom:92   0.0    21.395   19.707001   0.132
+    $atom:C4   $mol:.   @atom:92   0.0    22.052999   20.950001   0.278
+    $atom:C5   $mol:.   @atom:92   0.0    21.283001   22.150999   0.401
+    $atom:C6   $mol:.   @atom:90   0.0    19.881001   22.076   0.378
+    $atom:C7   $mol:.   @atom:90   0.0    21.966   23.398001   0.55
+    $atom:C8   $mol:.   @atom:90   0.0    23.334999   23.450001   0.579
+    $atom:C9   $mol:.   @atom:92   0.0    24.122999   22.266001   0.453
+    $atom:C10   $mol:.   @atom:92   0.0    23.478001   21.01   0.297
+    $atom:C11   $mol:.   @atom:92   0.0    24.254999   19.82   0.154
+    $atom:C12   $mol:.   @atom:90   0.0    23.589001   18.572001   -0.005
+    $atom:C13   $mol:.   @atom:90   0.0    22.166   18.511   -0.01
+    $atom:C14   $mol:.   @atom:90   0.0    25.68   19.882   0.155
+    $atom:C15   $mol:.   @atom:90   0.0    26.290001   21.153999   0.338
+    $atom:C16   $mol:.   @atom:90   0.0    25.535   22.299999   0.483
+    $atom:H17   $mol:.   @atom:91   0.0    19.298   22.993999   0.477
+    $atom:H18   $mol:.   @atom:91   0.0    21.371   24.308001   0.645
+    $atom:H19   $mol:.   @atom:91   0.0    23.851   24.403999   0.7
+    $atom:H20   $mol:.   @atom:91   0.0    27.372999   21.212   0.35
+    $atom:H21   $mol:.   @atom:91   0.0    26.034   23.261   0.626
+    $atom:H22   $mol:.   @atom:91   0.0    18.123557   20.821031   0.235224
+    $atom:H23   $mol:.   @atom:91   0.0    19.469153   18.690305   0.004954
+    $atom:H24   $mol:.   @atom:91   0.0    24.171159   17.658143   -0.123562
+    $atom:H25   $mol:.   @atom:91   0.0    21.663427   17.550323   -0.12234
+    $atom:H26   $mol:.   @atom:91   0.0    26.28222   18.983571   0.019881
+  }
+}

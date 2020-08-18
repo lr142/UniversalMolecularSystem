@@ -6,10 +6,10 @@ dump*
 output_ttree
 *lammps*
 *data*
-*moltemplate*
 *ttree*
 *xsd
 *result*
+03.CoalMD
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
