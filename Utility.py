@@ -79,6 +79,7 @@ class OutputHandler():
         else:
             print(message)
 
+
     def turn_on(self):
         self.OnOffState = True
 

@@ -248,6 +248,7 @@ def DuplicateSystemPeriodically(moleculerSystem,images):
     # [0,0,0] means the original image, whether the original images appears in the list of images has no effect.
     # Requirement: the molecularSystem must have the 'boundary' property properly set.
     # Currently it ONLY supports ORTHOGONAL systems!
+    # Also note that the 'boundary' of the system is unaltered! Duplicated atoms WILL BE OUTSIDE THE BOX!
     copyOfOriginalSystem = moleculerSystem.Copy()  # This copy saves the original state of the unduplicated system.
     A,B,C = [None,None,None]
     try:

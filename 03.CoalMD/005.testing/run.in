@@ -1,0 +1,42 @@
+include "system.in.init"
+read_data "system.data"
+include "system.in.settings"
+include "system.in.charges"
+set type 461 charge -0.676
+set type 544 charge -0.700
+
+group   gCoal subtract all gCH4
+
+neigh_modify exclude group gCoal gCoal
+#neigh_modify delay 0 every 1 check yes
+neigh_modify every 1 delay 0 check yes
+fix     fixCoal gCoal setforce 0.0 0.0 0.0
+minimize 1.0e-5 1.0e-6 1000 100000
+unfix   fixCoal
+
+#fix      fixWall gCH4 wall/lj126 xlo 0.0 0.07 3.55 10.0 pbc yes
+
+variable T equal 310
+variable interval equal 200
+variable totalSteps equal v_interval*10
+variable dumpInterval equal v_interval
+
+compute  mobileTemp gCH4 temp
+#compute  mobilePress all pressure mobileTemp
+thermo	 ${interval}
+thermo_style  custom step temp press pe ke etotal evdwl ecoul elong epair time
+thermo_modify  temp mobileTemp    # thermo_modify must comes after thermo_style
+#thermo_modify  press mobilePress    # thermo_modify must comes after thermo_style
+
+
+timestep 0.1
+
+#fix	 fixWall gCH4 wall/lj126 xlo 0.0 0.07 3.55 10.0 pbc yes
+
+
+dump     dump1 gCH4 custom ${dumpInterval} dump.lammpstrj id mol type x y z vx vy vz fx fy fz
+velocity gCH4 create ${T} 789012 mom no
+timestep 1.0
+fix      fixNVT gCH4 rigid/nvt/small molecule temp ${T} ${T} $(dt*100)
+reset_timestep 0
+run      ${totalSteps}

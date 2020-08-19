@@ -27,6 +27,7 @@
 #    TRIPOS mol2 file format specification, such as 1, 2, 3, ar, am, etc. More information can be obtained from
 #    www.tripos.com.
 
+import sys
 from Utility import *
 from UniversalMolecularSystem import *
 from XYZFile import *
@@ -230,11 +231,11 @@ class BondRules(BondDetector):
         # For system contains more than 10^4 atoms, O(N^2) is not acceptable. A neighbor list is needed here.
         N = len(atomList)
         if N > 10000:
-            output("Building NeighborList for system {} with grid size {} Å...".format(molecularSystem.name,self.globalCutoff))
+            sys.stdout.write("Building NeighborList for system {} with grid size {} Å...".format(molecularSystem.name,self.globalCutoff))
         neighList = NeighborList(atomList,self.globalCutoff)
         if N > 10000:
-            output("NeighborList Built.")
-            output("Scanning for Bonds:")
+            sys.stdout.write("Done.\n")
+            sys.stdout.write("Scanning for Bonds:\n")
 
         for i in range(N):
             if N > 10000 and i%1000 == 0:
