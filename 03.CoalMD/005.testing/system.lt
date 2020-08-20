@@ -1,16 +1,21 @@
 import "../common.header.lt"
 write_once("Data Boundary"){
-     -20.0 418.9907815546052 xlo xhi
+     0.0 99.7476953886513 xlo xhi
      -20.0 120.0 ylo yhi
      -20.0 120.0 zlo zhi
 }
 write_once("In Init"){
+     kspace_style pppm 0.001
      boundary p p p
 }
-g1 = new Given1[488]
-g2 = new Given2[32]
-fs = new FuchsSandoff[460]
-ch4 = new Methane[2804]
+g1 = new Given1[122]
+g2 = new Given2[8]
+fs = new FuchsSandoff[115]
+import "swcntwall.lt"
+wall = new SWCNTWall
+h2o = new TIP4P[4726]
 write_once("In Settings"){
-     group gCH4 id 184457:198476
+     group gCoal id 1:53674
+     group gH2O id 53675:72578
+     group gMobile id 53675:72578
 }

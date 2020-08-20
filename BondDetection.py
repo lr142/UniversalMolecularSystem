@@ -67,6 +67,15 @@ class NeighborList:
             self.maxx = max(a.x,self.maxx)
             self.maxy = max(a.y,self.maxy)
             self.maxz = max(a.z,self.maxz)
+
+        # The 'border' of the neighbors list
+        self.minx -= 0.95*gridSize
+        self.miny -= 0.95*gridSize
+        self.minz -= 0.95*gridSize
+        self.maxx += 0.95*gridSize
+        self.maxy += 0.95*gridSize
+        self.maxz += 0.95*gridSize
+
         from math import floor
         self.Nx = int(floor( (self.maxx - self.minx) / self.gridSize)) + 1
         self.Ny = int(floor( (self.maxy - self.miny) / self.gridSize)) + 1
@@ -82,22 +91,22 @@ class NeighborList:
         N = len(listOfAtoms)
         self.neighborList = [set() for i in range(N)]
 
-        def allAtomsInNeighborsOfAGridBlock(ix,iy,iz):
-            # Find all atoms in the 9 blocks (including itself) around grid[ix, iy, iz]
-            result = set()
-            for i in range(max(ix-1,0),min(ix+2,self.Nx)):
-                for j in range(max(iy-1,0),min(iy+2,self.Ny)):
-                    for k in range(max(iz-1,0),min(iz+2,self.Nz)):
-                        for a in self.grid[i][j][k]:
-                            result.add(a)
-            return result
-
         for i,a in enumerate(listOfAtoms):
             ix, iy, iz = self._find_grid_(a.x, a.y, a.z)
-            self.neighborList[i] = allAtomsInNeighborsOfAGridBlock(ix,iy,iz)
+            self.neighborList[i] = self.allAtomsInNeighborsOfAGridBlock(ix,iy,iz)
             self.neighborList[i].remove(a)  # remove itself
 
         #self._checking_()
+
+    def allAtomsInNeighborsOfAGridBlock(self, ix, iy, iz):
+        # Find all atoms in the 9 blocks (including itself) around grid[ix, iy, iz]
+        result = set()
+        for i in range(max(ix - 1, 0), min(ix + 2, self.Nx)):
+            for j in range(max(iy - 1, 0), min(iy + 2, self.Ny)):
+                for k in range(max(iz - 1, 0), min(iz + 2, self.Nz)):
+                    for a in self.grid[i][j][k]:
+                        result.add(a)
+        return result
 
     def GetNeighborList(self,index):
         # returns a copy of the neighborlist. Just a copy, don't modify it
@@ -111,7 +120,7 @@ class NeighborList:
             for b in neighlist:
                 dist = Distance(a,b)
                 if dist > sqrt(3)*2*self.gridSize:
-                    error("Something is wrong in _check_, distance = {}".format(dist))
+                    error("Something is wrong in _check_(), distance = {}".format(dist))
 
 
 
@@ -137,14 +146,13 @@ class NeighborList:
         # If a guestAtom is outside the box of the host system, ie, guestAtom.x not in [self.minx, self.maxx], etc, it's
         # considered to be a non-clash.
         result = [None for i in range(len(guestAtomList))]
-        neighbors = None
         for index, guestAtom in enumerate(guestAtomList):
             result[index] = False
             ix,iy,iz = self._find_grid_(guestAtom.x,guestAtom.y,guestAtom.z)
-            if ix<0 or ix>=self.Nx or iy<0 or iy>= self.Ny or iz<=0 or iz>=self.Nz:
+            if ix<0 or ix>=self.Nx or iy<0 or iy>= self.Ny or iz<0 or iz>=self.Nz:
                 # guest atom outside the box, it's a non-clash
                 continue
-            neighbors = self.grid[ix][iy][iz]
+            neighbors = self.allAtomsInNeighborsOfAGridBlock(ix,iy,iz)
             for hostAtom in neighbors:
                 dist = Distance(hostAtom,guestAtom)
                 if dist <= minDist:

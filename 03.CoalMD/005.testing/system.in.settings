@@ -3139,4 +3139,6 @@
     # improper_coeff @improper:X_102_103_103  10.5 180.0  ?
     # but I'd prefer to leave this out.
 
-     group gCH4 id 184457:198476
+     group gCoal id 1:53674
+     group gH2O id 53675:72578
+     group gMobile id 53675:72578
