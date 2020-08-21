@@ -18,5 +18,5 @@ from BondDetection import *
 
 #TestBondDetection()
 
-TestBreakupMolecule()
+#TestLAMMPSDATAFile()
 

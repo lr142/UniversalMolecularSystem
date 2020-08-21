@@ -1,5 +1,0 @@
-1. FuchsSandoff.mol2 Given1.mol2 and Given2.mol2 are drawn and exported from Materials Studio
-2. *.csv are forcefield types of each atom and are manually written
-3. fuchsSandoff.lt, given2.lt, and given1.lt are generated from LTFileFromMOL2.py in 001... Folder. methane.lt, tip4p.lt, tip4p2005.lt are hand written.
-4. all files in water.and.ch4.cells are built by Packmol, which are 100Å * 100Å * 100Å cells filled with CH4 or H2O
-5. CoalCell.xsd are a 100Å * 100Å * 100Å (approximately) cell of coal molecules, built by Amorpheous Cell module of Materials Studio
