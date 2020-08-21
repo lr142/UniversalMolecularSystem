@@ -12,6 +12,11 @@ output_ttree
 *002*
 *003*
 *004*
+*005*
+*006*
+*007*
+*008*
+*009*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

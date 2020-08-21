@@ -1,0 +1,19 @@
+import "../common.header.lt"
+write_once("Data Boundary"){
+     0.0 99.7476953886513 xlo xhi
+     -20.0 120.0 ylo yhi
+     -20.0 120.0 zlo zhi
+}
+write_once("In Init"){
+     kspace_style pppm 0.001
+     boundary p p p
+}
+g1 = new Given1[122]
+g2 = new Given2[8]
+fs = new FuchsSandoff[115]
+import "swcntwall.lt"
+wall = new SWCNTWall
+write_once("In Settings"){
+     group gCoal id 1:52685
+     group gMobile id 52686:52685
+}

@@ -1,0 +1,58 @@
+include "system.in.init"
+read_data "relaxed.data"
+include "system.in.settings"
+include "system.in.charges"
+set type 461 charge -0.676
+set type 544 charge -0.700
+
+
+
+
+neighbor 6.0 bin
+neigh_modify exclude group gCoal gCoal
+#neigh_modify exclude molecule/intra gMobile
+neigh_modify delay 0 every 1 check yes
+
+
+
+# Minimization
+#fix     fixCoal gCoal setforce 0.0 0.0 0.0
+#minimize 1.0e-5 1.0e-6 1000 100000
+#unfix   fixCoal
+
+#write_data relaxed.data
+#exit
+
+# Specify system parameters
+variable T equal 310
+velocity gMobile create ${T} 789012 mom no
+#fix      fixNVT gMobile rigid/nvt/small molecule temp ${T} ${T} $(dt*100)
+fix       fixNVE gMobile rigid/nve/small molecule
+fix       fixRescale gMobile temp/rescale 100 ${T} ${T} 50 1.0
+#fix      fixWallLeft gMobile wall/lj126 xlo -3.0 0.07 3.55 10.0 pbc yes # xlo@-2.0, lj126 style with epsilon, sigma = 0.07 and 3.55, cutoff 10.0
+#fix      fixWallRight gMobile wall/lj126 xhi EDGE 0.07 3.55 10.0 pbc yes
+region    rCylinder cylinder x 50 50 28 -20 120
+#fix       fCylinder gMobile wall/region rCylinder lj126 0.07 3.55 10.0
+
+
+# Thermo style
+variable interval equal 1000
+compute  mobileTemp gMobile temp
+thermo   ${interval}
+thermo_style  custom step temp pe ke etotal evdwl ecoul elong epair time
+thermo_modify  temp mobileTemp    # thermo_modify must comes after thermo_style
+thermo_modify  lost ignore
+
+
+
+
+# Equilibriation Stage
+# optionally, there is a 10000 steps (1 ps) equilibration run. If necessary, adjust the time if needed.
+
+timestep 0.1
+
+dump     dumpEquil  gMobile custom ${interval} dump.equil.lammpstrj id mol type x y z vx vy vz fx fy fz
+run      10000
+
+
+

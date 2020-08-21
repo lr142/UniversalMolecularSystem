@@ -34,7 +34,7 @@ class StructruePrepParameter:
         self.coalCellFile = '{}/{}'.format(commonPath, "CoalCell.xsd" )
         self.methaneCellFile = '{}/{}/{}'.format(commonPath, "water.and.ch4.cells", "4158methane.pdb")
         self.waterCellFile = '{}/{}/{}'.format(commonPath, "water.and.ch4.cells", "33428water.pdb")
-        self.minDistanceForClashing = 3.0
+        self.minDistanceForClashing = 3.4
 
 def __CuttingTube(cell, length, outerDiameter, innerDiameter, centerY, centerZ):
     # Making a tube that is _length Å long (periodic), with outer shell diameter _outer Å, inner shell diameter _inner Å
@@ -100,10 +100,6 @@ def _S1_PrepareCoal(para):
     largeCoalCell = primitiveCoalCell.Copy()
     DuplicateSystemPeriodically(largeCoalCell, images)
 
-    # This value should be set in periodic system.
-    largeCoalCell.boundary[0][0] *= imagesX
-
-
     __CuttingTube(largeCoalCell,
                     length=999999,  # We are not cutting the cube in the X-direction but leave it as is.
                     outerDiameter=para.outerDiameter,
@@ -114,7 +110,7 @@ def _S1_PrepareCoal(para):
     # If no padding, the cell is periodic in the x-direction. In this case, move all atoms with x-coords < 0 to
     # the right end of the cell
     if math.fabs(para.extraPaddingInXDirection) < 1E-3:
-        A = largeCoalCell.boundary[0][0]
+        A = largeCoalCell.boundary[0][0] * para.numberOfCoalCellsInXDirection
         for m in largeCoalCell.molecules:
             for a in m.atoms:
                 if a.x <= 0:
@@ -207,11 +203,11 @@ def __FillCoalWithSmallMol(coalCell,smallMolCell,XFrom,XTo,outerDiameter,centerY
 
     ExtendSystem(coalCell,smallMolCell)
 
-
 def _S2_1_PaddingWithCarbonNanoTubeWall(coalCell,para):
     # Pad the inner wall of the coal tube with a double-walled carbon nanotube
-    nanoTube = SingleWallCarbonNanoTube(para.innerDiameter/2.0 + 3 * para.minDistanceForClashing, coalCell.boundary[0][0])
-    wall2 = SingleWallCarbonNanoTube(para.innerDiameter/2.0 + para.minDistanceForClashing, coalCell.boundary[0][0])
+    length = coalCell.boundary[0][0] * para.numberOfCoalCellsInXDirection
+    nanoTube = SingleWallCarbonNanoTube(para.innerDiameter/2.0 + 3 * para.minDistanceForClashing, length)
+    wall2 = SingleWallCarbonNanoTube(para.innerDiameter/2.0 + para.minDistanceForClashing, length)
 
     nanoTube.molecules[0].atoms.extend(wall2.molecules[0].atoms)
     nanoTube.RenumberAtomSerials()
@@ -231,14 +227,13 @@ def _S2_1_PaddingWithCarbonNanoTubeWall(coalCell,para):
     nanoTube.RenumberAtomSerials()
     __FillCoalWithSmallMol(coalCell,nanoTube,
                            XFrom = 0.0,
-                           XTo = coalCell.boundary[0][0] - para.minDistanceForClashing * 0.5,
+                           XTo = length - para.minDistanceForClashing * 0.5,
                            outerDiameter = para.innerDiameter + 6 * para.minDistanceForClashing,
                            centerY = para.outerDiameter/2.0,
                            centerZ = para.outerDiameter/2.0,
                            minDist = para.minDistanceForClashing * 0.5,  # We want a 'tight' wall that doesn't leak
                            perMolecule = False
                            )
-
 
 def _S2_2_FillCoalWithMethane(coalCell,para):
 
@@ -258,8 +253,6 @@ def _S2_2_FillCoalWithMethane(coalCell,para):
                            centerY = para.outerDiameter/2.0,
                            centerZ = para.outerDiameter/2.0,
                            minDist = para.minDistanceForClashing)
-
-
 
 def _S2_3_FillCoalWithWater(coalCell,para):
 
@@ -424,7 +417,6 @@ def _S3_SortByMolAndGenerateSystemLT(cell,para):
             output(l)
         output.setoutput(None)
 
-
 def Prepare(parameters):
     output('Step 1: Prepare the coal tube...')
     coalCell = _S1_PrepareCoal(parameters)
@@ -465,7 +457,4 @@ def Prepare(parameters):
         output.setoutput(file)
         reducedCell.Write(XYZFile())
         output.setoutput(None)
-
-
-
 
