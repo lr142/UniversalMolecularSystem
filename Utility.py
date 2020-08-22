@@ -1,6 +1,7 @@
 # Public utility functions and classes. Implement commonly used constants, mathematical functions, etc
 import math
 import sys
+import numpy as np
 
 class PeriodicTable:
     def __init__(self):
