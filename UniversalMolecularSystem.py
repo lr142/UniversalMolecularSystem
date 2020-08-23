@@ -179,7 +179,6 @@ class Molecule:
             self.serial,self.name,self.type,len(self.atoms),len(self.bonds)
         ))
 
-
 class MolecularFile:
     # This is an abstract class that represents a molecular system description file and the methods to Read/Write
     # the file. For each supported file type, such as .xyz, .mol2, .pdb, etc., a separate concrete class shall be
@@ -205,7 +204,7 @@ class Trajectory:
     # The Trajectory class utilizes Numpy 'narray's to store positions, velocities, forces, etc of each atom in each frame
     timestep: float # timestep length in the unit of fs, (consistent with the 'real' units in LAMMPS)
     NFrames: int     # number of frames
-    tiemstep_of_each_frame: []  # records the timestep each frame corresponds to.
+    timesteps_of_each_frame: []  # records the timestep each frame corresponds to.
     NAtoms: int     # number of total atoms
     serial_to_index_map: map   # A map that maps atom.systemwideSerial to indexes in the following array
     index_to_serial: []        # with length NAtom, this array records each atom's systemwideSerial to its MolecularSystem
@@ -231,6 +230,7 @@ class Trajectory:
         # LAMMPS dump files. A default value (1.0 fs) is given since in some cases ( like goemetry optimization in QM)
         # a timestep is irrelevant.
         self.timestep = timestep_in_fs
+        self.timesteps_of_each_frame = []
         self.NFrames = 0
         self.NAtoms = 0
         self.dtype = dtype
@@ -259,8 +259,22 @@ class Trajectory:
             newTrj.forces.append(force.copy())
         return newTrj
 
+    def DropFrame(self,index):
+        # Drop a frame by index. Useful when frames are duplicate
+        try:
+            del self.timesteps_of_each_frame[index]
+            del self.positions[index]
+            if len(self.velocities) > 0:
+                del self.velocities[index]
+            if len(self.forces) > 0:
+                del self.forces[index]
+            self.NFrames -= 1
+        except:
+            error("In Trajectory.DropFrame(), index {} is invalid.".format(index))
+        return True
 
-    pass
+
+
 
 class MolecularSystem:
     # A molecular system is a collection of molecules and, in some cases, associated information including boundary
@@ -372,6 +386,18 @@ class MolecularSystem:
                 a.x *= A
                 a.y *= B
                 a.z *= C
+
+    def UpdateCoordinatesByTrajectoryFrame(self,iFrame):
+        if self.trajectory == None:
+            return False
+        for mol in self.molecules:
+            for atom in mol.atoms:
+                if atom.systemwideSerial in self.trajectory.serial_to_index_map:
+                    pos = self.trajectory.serial_to_index_map[atom.systemwideSerial]
+                    atom.x = self.trajectory.positions[iFrame][pos][0]
+                    atom.y = self.trajectory.positions[iFrame][pos][1]
+                    atom.z = self.trajectory.positions[iFrame][pos][2]
+
 
     # Read and Write operations are delegated to concrete MolecularFile classes.
     def Summary(self):

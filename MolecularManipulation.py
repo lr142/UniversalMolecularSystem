@@ -294,7 +294,74 @@ def DuplicateSystemPeriodically(moleculerSystem,images):
     del copyOfOriginalSystem
     return True
 
+def SubSystemByMask(molecularSystem,mask):
+    # Generates a sub-system of the original one with some atoms and associated bonds removed (to ensure that there is
+    # no dangling bonds). mask is a list of booleans having the length of the number of atoms indicating which atoms are
+    # picked. If there is only a handful of atoms to pick, for example in the case that the user wants to focus on
+    # a certain molecule in the system, the user can call the other function 'SubSystemBySystemwideSerials()'
+    # by providing a list of serials.
+    # Features: This function will return a new MolecularSystem that retains the molecules structures as much as it can.
+    # Restrictions: The returned MolecularSystem shall have systemwideSerials identical to the original one, which is
+    # intentional so that the sub-system can utilize the original system's Trajectory to update its coordinates.
+    # It also means that systemwideSerials are not continuous in the returned sub-system and calling Write() function on
+    # the sub-system will produce an unreadable format by some file writers, i.e. MOL2File(). The users must call
+    # RenumberAtomSerials() on the sub-system before writing out the sub-structure in such formats.
+    ms = molecularSystem.Copy()
+    NAtoms = ms.AtomCount()
+    if len(mask) != NAtoms:
+        error("In SubSystemByMask(ms,mask), the length of mask ({}) must equal NAtoms ({})".format(len(mask),NAtoms))
+        return None
 
+    systemWideSerial_to_index_map = {}
+    index = 0
+    for mol in ms.molecules:
+        for atom in mol.atoms:
+            systemWideSerial_to_index_map[atom.systemwideSerial] = index
+            index += 1
+
+    for mol in ms.molecules:
+        newAtomList = []
+        newBondList = []
+        remainingAtomsSerialSet = set()   # intra-molecular serial, not systemwideSerial
+        for atom in mol.atoms:
+            index = systemWideSerial_to_index_map[atom.systemwideSerial]
+            if mask[index]:
+                newAtomList.append(atom)
+                remainingAtomsSerialSet.add(atom.serial)
+        for bond in mol.bonds:
+            if bond.atom1 in remainingAtomsSerialSet and bond.atom2 in remainingAtomsSerialSet:
+                # Both ends must remain in order to survive, otherwise there shall be dangling bonds
+                newBondList.append(bond)
+        mol.atoms = newAtomList
+        mol.bonds = newBondList
+
+    newIntermolecularBondList = []
+    for bond in ms.interMolecularBonds:
+        if bond.atom1 in systemWideSerial_to_index_map and bond.atom2 in systemWideSerial_to_index_map:
+            newIntermolecularBondList.append(bond)
+    ms.interMolecularBonds = newIntermolecularBondList
+
+    # Run a last check to remove all-empty molecules
+    newMolList = []
+    for mol in ms.molecules:
+        if len(mol.atoms) > 0:
+            newMolList.append(mol)
+    ms.molecules = newMolList
+    return ms
+
+def SubSystemBySystemwideSerials(molecularSystem,surviving_atoms_by_systemwideSerials):
+    # See the explanation in SubSystemByMask(). This function is similar except that a list of surviving atoms instead
+    # of a list of masks are provided.
+    # This function is implemented via SubSystemByMask()
+    mask = [False] * molecularSystem.AtomCount()
+    surviving_set = set(surviving_atoms_by_systemwideSerials)
+    index = 0
+    for m in molecularSystem.molecules:
+        for a in m.atoms:
+            if a.systemwideSerial in surviving_set:
+                mask[index] = True
+            index += 1
+    return SubSystemByMask(molecularSystem,mask)
 
 def TestBreakupMolecule():
     ms = MolecularSystem()
@@ -305,7 +372,6 @@ def TestBreakupMolecule():
     images = [[0,0,0],[1,0,0],[0,1,0]]
     DuplicateSystemPeriodically(ms,images)
     ms.Summary()
-    output.setoutput(open('testcase/dump.mol2','w'))
-    ms.Write(MOL2File())
+
 
 

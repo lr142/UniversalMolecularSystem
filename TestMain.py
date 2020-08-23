@@ -22,37 +22,6 @@ from LAMMPSDUMPFile import *
 #TestBondDetection()
 
 
-def TestLAMMPSDUMPFile():
-
-    ms = MolecularSystem()
-    ms.Read(LAMMPSDATAFile(),'equil.data')
-
-    ms.ReadTrajectory(LAMMPSDUMPFile(),'dump1.lammpstrj',timestep_in_fs=0.5)
-    ms.ReadTrajectory(LAMMPSDUMPFile(),'dump2.lammpstrj')
-
-    newMS = ms.CopyWithTrajectory()
-
-    ms.trajectory.positions = []   # intentionally destroys the original structure
-    ms.trajectory.NFrames = -1009
-
-    index = 0
-    print(newMS.trajectory.index_to_serial[index])
-    for i in range(newMS.trajectory.NFrames):
-        import sys
-
-        sys.stdout.write('{} '.format(newMS.trajectory.positions[i][index]))
-
-        sys.stdout.write('{} '.format(newMS.trajectory.velocities[i][index]))
-
-        sys.stdout.write('{} '.format(newMS.trajectory.forces[i][index]))
-
-        sys.stdout.write('\n')
-
-
-    # ms.Summary()
-    # output.setoutput(open('dump.mol2','w'))
-    # ms.Write(MOL2File())
-
 TestLAMMPSDUMPFile()
 
 
