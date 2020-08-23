@@ -397,6 +397,8 @@ class MolecularSystem:
                     atom.x = self.trajectory.positions[iFrame][pos][0]
                     atom.y = self.trajectory.positions[iFrame][pos][1]
                     atom.z = self.trajectory.positions[iFrame][pos][2]
+                else:
+                    error("Didn't find atom serial {} in the TRJ".format(atom.systemwideSerial))
 
 
     # Read and Write operations are delegated to concrete MolecularFile classes.

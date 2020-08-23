@@ -1,7 +1,9 @@
 from  UniversalMolecularSystem import *
 import Utility
+import math
 
 class LAMMPSDUMPFile (MolecularFile):
+
     def __init__(self):
         pass
 
@@ -110,7 +112,6 @@ class LAMMPSDUMPFile (MolecularFile):
         array_forces = np.zeros((NAtomsInThisFrame,3)) if ifForce else None
 
 
-
         for indexInFile, serial in enumerate(list_ids):
             position = trajectory.serial_to_index_map[serial]
             array_xyzs[position,:] = list_xyzs[indexInFile]
@@ -125,8 +126,8 @@ class LAMMPSDUMPFile (MolecularFile):
 
         trajectory.NFrames += 1
 
-        return line_no + 1
 
+        return line_no + 1
 
     def Read(self,trajectory,filename):
 
@@ -159,6 +160,7 @@ class LAMMPSDUMPFile (MolecularFile):
                 line_no += 1
         Utility.ProgressBar(1.0, 50)
         output('')
+        return True
 
 
 def TestLAMMPSDUMPFile():

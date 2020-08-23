@@ -102,6 +102,8 @@ class MOL2File(MolecularFile):
                   "molecular structure was read in.",False)
             return False
         file.close()
+
+        molecularSystem.RenumberAtomSerials()
         return True
 
     def ParseAtomLine(self,line):
