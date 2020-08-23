@@ -2,10 +2,7 @@
 # Pycharm environment
 .idea
 .DS_Store
-dump*
 output_ttree
-*lammps*
-*data*
 *ttree*
 *xsd
 *result*
